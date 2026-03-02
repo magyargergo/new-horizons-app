@@ -18,13 +18,13 @@ const BADGE_R = 220;
 const SECTOR_OFFSET = 10;
 
 const SECTOR_LAYOUT: Record<string, { arcStart: number; arcEnd: number }> = {
-  "top-right":    { arcStart: 270, arcEnd: 360 },
-  "bottom-right": { arcStart: 0,   arcEnd: 90  },
-  "bottom-left":  { arcStart: 90,  arcEnd: 180 },
-  "top-left":     { arcStart: 180, arcEnd: 270 },
+  "atlas-sector":   { arcStart: 270, arcEnd: 360 },
+  "denerum-sector": { arcStart: 0,   arcEnd: 90  },
+  "castell-sector": { arcStart: 90,  arcEnd: 180 },
+  "vintar-sector":  { arcStart: 180, arcEnd: 270 },
 };
 
-const CORE_SLUG = "core";
+const CORE_SLUG = "imperial-core";
 
 interface GalacticMapProps {
   sectors: SectorMetadata[];

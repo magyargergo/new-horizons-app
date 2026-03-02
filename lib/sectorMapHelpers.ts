@@ -4,10 +4,10 @@ export const FULL_W = 1200;
 export const FULL_H = 800;
 
 export const SECTOR_TERRITORY: Record<string, { cx: number; cy: number; arcStart: number; arcEnd: number }> = {
-  "top-right": { cx: 80, cy: 720, arcStart: 270, arcEnd: 360 },
-  "bottom-right": { cx: 80, cy: 80, arcStart: 0, arcEnd: 90 },
-  "bottom-left": { cx: 1120, cy: 80, arcStart: 90, arcEnd: 180 },
-  "top-left": { cx: 1120, cy: 720, arcStart: 180, arcEnd: 270 },
+  "atlas-sector":   { cx: 80,   cy: 720, arcStart: 270, arcEnd: 360 },
+  "denerum-sector": { cx: 80,   cy: 80,  arcStart: 0,   arcEnd: 90  },
+  "castell-sector": { cx: 1120, cy: 80,  arcStart: 90,  arcEnd: 180 },
+  "vintar-sector":  { cx: 1120, cy: 720, arcStart: 180, arcEnd: 270 },
 };
 
 export const TERRITORY_INNER_R = 260;

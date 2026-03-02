@@ -202,7 +202,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
             const ls = toRad(arcStart), le = toRad(arcEnd);
             const lxs = cx + labelR * Math.cos(ls), lys = cy + labelR * Math.sin(ls);
             const lxe = cx + labelR * Math.cos(le), lye = cy + labelR * Math.sin(le);
-            const needsReverse = sector.slug === "bottom-right" || sector.slug === "bottom-left";
+            const needsReverse = sector.slug === "denerum-sector" || sector.slug === "castell-sector";
             const labelPathD = needsReverse
               ? `M ${lxe} ${lye} A ${labelR} ${labelR} 0 0 0 ${lxs} ${lys}`
               : `M ${lxs} ${lys} A ${labelR} ${labelR} 0 0 1 ${lxe} ${lye}`;
