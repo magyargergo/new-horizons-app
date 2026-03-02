@@ -15,7 +15,7 @@
       "type": "planet",
       "biome": "mining",
       "orbitPosition": 340,
-      "orbitDistance": 0.6,
+      "orbitDistance": 1,
       "labelPosition": "bottom",
       "lathanium": true,
       "kankaUrl": "https://app.kanka.io/w/96303/entities/8893899"
@@ -45,7 +45,7 @@
       "type": "planet",
       "biome": "alpine",
       "orbitPosition": 140,
-      "orbitDistance": 0.6,
+      "orbitDistance": 0.8,
       "labelPosition": "bottom",
       "nobility": true,
       "kankaUrl": "https://app.kanka.io/w/96303/entities/8893898"
@@ -54,8 +54,8 @@
       "id": "2nd-exp-fleet",
       "name": "2nd Exploratory Fleet",
       "type": "fleet",
-      "orbitPosition": 270,
-      "orbitDistance": 0.7,
+      "orbitPosition": 250,
+      "orbitDistance": 0.6,
       "labelPosition": "bottom",
       "kankaUrl": "https://app.kanka.io/w/96303/entities/8893940"
     }
