@@ -291,7 +291,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
     <defs>
       {/* Fleet ships: tip (left) = gold, base (right) = blue */}
       <linearGradient id="fleetGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%"   stopColor={FLEET_GRAD_TIP}  />
+        <stop offset="0%" stopColor={FLEET_GRAD_TIP} />
         <stop offset="100%" stopColor={FLEET_GRAD_BASE} />
       </linearGradient>
       {sector.systems.flatMap((pin) => {
@@ -554,10 +554,10 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                   const isActive = activeMarkerId === String(connIdx);
                   const t = Math.max(0, Math.min(1, marker.position));
                   const mt = 1 - t;
-                  const mpx = mt*mt*p0t.x + 2*mt*t*p1.x + t*t*p2t.x;
-                  const mpy = mt*mt*p0t.y + 2*mt*t*p1.y + t*t*p2t.y;
-                  const tanX = 2*mt*(p1.x-p0t.x) + 2*t*(p2t.x-p1.x);
-                  const tanY = 2*mt*(p1.y-p0t.y) + 2*t*(p2t.y-p1.y);
+                  const mpx = mt * mt * p0t.x + 2 * mt * t * p1.x + t * t * p2t.x;
+                  const mpy = mt * mt * p0t.y + 2 * mt * t * p1.y + t * t * p2t.y;
+                  const tanX = 2 * mt * (p1.x - p0t.x) + 2 * t * (p2t.x - p1.x);
+                  const tanY = 2 * mt * (p1.y - p0t.y) + 2 * t * (p2t.y - p1.y);
                   const angle = Math.atan2(tanY, tanX) * 180 / Math.PI;
                   const rotAngle = marker.type === "ship" ? angle + 90 : angle - 180;
                   const shipGradId = `conn-ship-${connIdx}`;
@@ -574,9 +574,9 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                         <>
                           <defs>
                             <radialGradient id={shipGradId}>
-                              <stop offset="0%"   stopColor={SHIP_COLORS.color} stopOpacity="1"   />
-                              <stop offset="70%"  stopColor={shipSecondary}      stopOpacity="0.9" />
-                              <stop offset="100%" stopColor={shipSecondary}      stopOpacity="0.7" />
+                              <stop offset="0%" stopColor={SHIP_COLORS.color} stopOpacity="1" />
+                              <stop offset="70%" stopColor={shipSecondary} stopOpacity="0.9" />
+                              <stop offset="100%" stopColor={shipSecondary} stopOpacity="0.7" />
                             </radialGradient>
                           </defs>
                           <polygon points="0,-9 -6,5 6,5"
@@ -801,7 +801,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                             />
                           )}
 
-                          {body.lathanium && (() => {
+                          {body.special_attribute === "lathanium" && (() => {
                             const dx = pos.x + labelR * 0.85;
                             const dy = pos.y - labelR * 0.85;
                             const s = 5;
@@ -810,13 +810,13 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                                 points={`${dx},${dy - s} ${dx + s},${dy} ${dx},${dy + s} ${dx - s},${dy}`}
                                 fill="#1D4ED8"
                                 stroke="#93C5FD"
-                                strokeWidth="1.2"
-                                style={{ filter: "drop-shadow(0 0 4px #3B82F6)" }}
+                                strokeWidth="2"
+                                style={{ filter: "drop-shadow(0 0 6px #3B82F6)" }}
                               />
                             );
                           })()}
 
-                          {body.nobility && (() => {
+                          {body.special_attribute === "nobility" && (() => {
                             const dx = pos.x + labelR * 0.85;
                             const dy = pos.y - labelR * 0.85;
                             const s = 6;
@@ -827,6 +827,36 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                                 stroke="#FDE047"
                                 strokeWidth="2"
                                 style={{ filter: "drop-shadow(0 0 6px #FDE047)" }}
+                              />
+                            );
+                          })()}
+
+                          {body.special_attribute === "purified" && (() => {
+                            const dx = pos.x + labelR * 0.85;
+                            const dy = pos.y - labelR * 0.85;
+                            return (
+                              <path
+                                d={`M ${dx} ${dy-5} L ${dx+4} ${dy} L ${dx+2} ${dy+3} L ${dx-2} ${dy+3} L ${dx-4} ${dy} Z M ${dx+2} ${dy+3} L ${dx+4} ${dy+7} M ${dx-2} ${dy+3} L ${dx-4} ${dy+7}`}
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                style={{ filter: "drop-shadow(0 0 6px #FFFFFF)" }}
+                              />
+                            );
+                          })()}
+
+                          {body.special_attribute === "lightbringer" && (() => {
+                            const dx = pos.x + labelR * 0.85;
+                            const dy = pos.y - labelR * 0.85;
+                            const o = 5; const i = 2;
+                            return (
+                              <polygon
+                                points={`${dx + o},${dy} ${dx + i},${dy + i} ${dx},${dy + o} ${dx - i},${dy + i} ${dx - o},${dy} ${dx - i},${dy - i} ${dx},${dy - o} ${dx + i},${dy - i}`}
+                                fill="#FFE87A"
+                                stroke="#FFE87A"
+                                strokeWidth="2"
+                                style={{ filter: "drop-shadow(0 0 6px #FFE87A)" }}
                               />
                             );
                           })()}
@@ -848,8 +878,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                       const { color: bodyColor } = getBodyColors(body);
                       const cardW = 220;
                       const cardH = 50
-                        + (body.lathanium ? 20 : 0)
-                        + (body.nobility ? 20 : 0)
+                        + (body.special_attribute ? 20 : 0)
                         + (body.kankaUrl ? 34 : 0);
 
                       // Body radius determines how far card must offset to avoid overlap
@@ -876,21 +905,41 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                           <div style={{ color: bodyColor, fontSize: "11px", fontWeight: 600, marginBottom: "3px" }}>
                             {body.name}
                           </div>
-                          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "9px", marginBottom: body.lathanium ? "6px" : "5px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "9px", marginBottom: body.special_attribute ? "6px" : "5px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                             {body.type}{body.biome ? ` · ${body.biome}` : ""}
                           </div>
-                          {body.lathanium && (
-                            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: body.nobility ? "4px" : undefined }}>
+                          {body.special_attribute === "lathanium" && (
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                               <span style={{ display: "inline-block", width: "7px", height: "7px", background: "#1D4ED8", transform: "rotate(45deg)", boxShadow: "0 0 4px #3B82F6", flexShrink: 0 }} />
                               <span style={{ color: "#93C5FD", fontSize: "9px", letterSpacing: "0.05em" }}>This planet has Lathanium</span>
                             </div>
                           )}
-                          {body.nobility && (
+                          {body.special_attribute === "nobility" && (
                             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                               <svg width="9" height="9" viewBox="0 0 10 10" style={{ flexShrink: 0 }}>
                                 <polygon points="0,1 10,1 5,9" fill="none" stroke="#FDE047" strokeWidth="1.5" />
                               </svg>
                               <span style={{ color: "#FDE047", fontSize: "9px", letterSpacing: "0.05em" }}>Restricted to nobility only</span>
+                            </div>
+                          )}
+                          {body.special_attribute === "purified" && (
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                              <svg width="9" height="12" viewBox="-6 -6 12 14" style={{ flexShrink: 0 }}>
+                                <path d="M 0,-5 L 4,0 L 2,3 L -2,3 L -4,0 Z M 2,3 L 4,7 M -2,3 L -4,7"
+                                  fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round"
+                                  style={{ filter: "drop-shadow(0 0 2px #FFFFFF)" }} />
+                              </svg>
+                              <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "9px", letterSpacing: "0.05em" }}>This location was purified</span>
+                            </div>
+                          )}
+                          {body.special_attribute === "lightbringer" && (
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                              <svg width="9" height="9" viewBox="-6 -6 12 12" style={{ flexShrink: 0 }}>
+                                <polygon points="5,0 1.4,1.4 0,5 -1.4,1.4 -5,0 -1.4,-1.4 0,-5 1.4,-1.4"
+                                  fill="#FFE87A" stroke="#FFE87A" strokeWidth="0.3"
+                                  style={{ filter: "drop-shadow(0 0 2px #FFE87A)" }} />
+                              </svg>
+                              <span style={{ color: "#FFE87A", fontSize: "9px", letterSpacing: "0.05em" }}>Lightbringer presence on planet</span>
                             </div>
                           )}
                           {body.kankaUrl && (
@@ -958,31 +1007,31 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
             if (!conn || !marker) return null;
 
             const fromSys = sector.systems.find(s => s.slug === conn.from) ?? sector.vortexes?.find(v => v.slug === conn.from);
-            const toSys   = sector.systems.find(s => s.slug === conn.to)   ?? sector.vortexes?.find(v => v.slug === conn.to);
+            const toSys = sector.systems.find(s => s.slug === conn.to) ?? sector.vortexes?.find(v => v.slug === conn.to);
             if (!fromSys || !toSys) return null;
 
             const p0 = { x: fromSys.x, y: fromSys.y };
-            const p2 = { x: toSys.x,   y: toSys.y   };
+            const p2 = { x: toSys.x, y: toSys.y };
             const mx = (p0.x + p2.x) / 2, my = (p0.y + p2.y) / 2;
             const segDx = p2.x - p0.x, segDy = p2.y - p0.y;
-            const segLen = Math.sqrt(segDx*segDx + segDy*segDy);
+            const segLen = Math.sqrt(segDx * segDx + segDy * segDy);
             const curvature = conn.curvature ?? 0;
-            const p1 = { x: mx + (segLen > 0 ? (-segDy/segLen)*curvature : 0), y: my + (segLen > 0 ? (segDx/segLen)*curvature : 0) };
+            const p1 = { x: mx + (segLen > 0 ? (-segDy / segLen) * curvature : 0), y: my + (segLen > 0 ? (segDx / segLen) * curvature : 0) };
 
             const fromSysSys = sector.systems.find(s => s.slug === conn.from);
-            const toSysSys   = sector.systems.find(s => s.slug === conn.to);
+            const toSysSys = sector.systems.find(s => s.slug === conn.to);
             const fromRadius = fromSysSys ? (orbitDataMap.get(fromSysSys.slug)?.maxOrbit ?? 40) * SYS_SCALE + 8 : ((sector.vortexes?.find(v => v.slug === conn.from)?.radius) ?? 80);
-            const toRadius   = toSysSys   ? (orbitDataMap.get(toSysSys.slug)?.maxOrbit   ?? 40) * SYS_SCALE + 8 : ((sector.vortexes?.find(v => v.slug === conn.to)?.radius)   ?? 80);
+            const toRadius = toSysSys ? (orbitDataMap.get(toSysSys.slug)?.maxOrbit ?? 40) * SYS_SCALE + 8 : ((sector.vortexes?.find(v => v.slug === conn.to)?.radius) ?? 80);
 
-            const tan0x = p1.x - p0.x, tan0y = p1.y - p0.y, tan0len = Math.sqrt(tan0x*tan0x + tan0y*tan0y);
-            const p0t = tan0len > 0 ? { x: p0.x + (tan0x/tan0len)*fromRadius, y: p0.y + (tan0y/tan0len)*fromRadius } : p0;
-            const tan1x = p1.x - p2.x, tan1y = p1.y - p2.y, tan1len = Math.sqrt(tan1x*tan1x + tan1y*tan1y);
-            const p2t = tan1len > 0 ? { x: p2.x + (tan1x/tan1len)*toRadius,   y: p2.y + (tan1y/tan1len)*toRadius   } : p2;
+            const tan0x = p1.x - p0.x, tan0y = p1.y - p0.y, tan0len = Math.sqrt(tan0x * tan0x + tan0y * tan0y);
+            const p0t = tan0len > 0 ? { x: p0.x + (tan0x / tan0len) * fromRadius, y: p0.y + (tan0y / tan0len) * fromRadius } : p0;
+            const tan1x = p1.x - p2.x, tan1y = p1.y - p2.y, tan1len = Math.sqrt(tan1x * tan1x + tan1y * tan1y);
+            const p2t = tan1len > 0 ? { x: p2.x + (tan1x / tan1len) * toRadius, y: p2.y + (tan1y / tan1len) * toRadius } : p2;
 
             const t = Math.max(0, Math.min(1, marker.position));
             const mt = 1 - t;
-            const mpx = mt*mt*p0t.x + 2*mt*t*p1.x + t*t*p2t.x;
-            const mpy = mt*mt*p0t.y + 2*mt*t*p1.y + t*t*p2t.y;
+            const mpx = mt * mt * p0t.x + 2 * mt * t * p1.x + t * t * p2t.x;
+            const mpy = mt * mt * p0t.y + 2 * mt * t * p1.y + t * t * p2t.y;
 
             const allegiance = marker.allegiance ? ALLEGIANCES[marker.allegiance] : undefined;
             const cardAccent = allegiance?.color ?? SHIP_COLORS.color;
@@ -991,48 +1040,48 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
 
             return (
               <g transform={`translate(${mpx.toFixed(1)},${mpy.toFixed(1)}) scale(${SYS_SCALE * 2})`}>
-              <SvgTooltip
-                anchorX={0} anchorY={0}
-                cardW={cardW} cardH={cardH}
-                color={cardAccent} clearance={42}
-                viewBox={vb}
-                parentOffsetX={mpx} parentOffsetY={mpy}
-                scale={SYS_SCALE * 2}
-                onMouseEnter={markerCardEnter} onMouseLeave={markerCardLeave}>
-                <div style={{ display: "flex", alignItems: "stretch", gap: "6px", marginBottom: "5px" }}>
-                  <div style={{ flex: "0 0 70%" }}>
-                    <div style={{ color: cardAccent, fontSize: "11px", fontWeight: 600, marginBottom: "3px" }}>
-                      {marker.name}
+                <SvgTooltip
+                  anchorX={0} anchorY={0}
+                  cardW={cardW} cardH={cardH}
+                  color={cardAccent} clearance={42}
+                  viewBox={vb}
+                  parentOffsetX={mpx} parentOffsetY={mpy}
+                  scale={SYS_SCALE * 2}
+                  onMouseEnter={markerCardEnter} onMouseLeave={markerCardLeave}>
+                  <div style={{ display: "flex", alignItems: "stretch", gap: "6px", marginBottom: "5px" }}>
+                    <div style={{ flex: "0 0 70%" }}>
+                      <div style={{ color: cardAccent, fontSize: "11px", fontWeight: 600, marginBottom: "3px" }}>
+                        {marker.name}
+                      </div>
+                      <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        {marker.type}
+                        {allegiance && (
+                          <>
+                            <span style={{ margin: "0 5px", opacity: 0.4 }}>·</span>
+                            <span style={{ color: allegiance.color }}>{allegiance.name}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      {marker.type}
-                      {allegiance && (
-                        <>
-                          <span style={{ margin: "0 5px", opacity: 0.4 }}>·</span>
-                          <span style={{ color: allegiance.color }}>{allegiance.name}</span>
-                        </>
-                      )}
-                    </div>
+                    {allegiance && (
+                      <div style={{ flex: "0 0 30%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <img src={allegiance.logo} alt={allegiance.name}
+                          style={{ width: "28px", height: "28px", objectFit: "contain" }} />
+                      </div>
+                    )}
                   </div>
-                  {allegiance && (
-                    <div style={{ flex: "0 0 30%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <img src={allegiance.logo} alt={allegiance.name}
-                        style={{ width: "28px", height: "28px", objectFit: "contain" }} />
-                    </div>
+                  {marker.kankaUrl && (
+                    <a href={marker.kankaUrl} target="_blank" rel="noopener noreferrer" style={{
+                      display: "block", marginTop: "8px", padding: "4px 8px",
+                      background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
+                      borderRadius: "4px", color: "rgba(165,180,252,0.9)", fontSize: "9px",
+                      textAlign: "center", letterSpacing: "0.08em", textDecoration: "none",
+                      textTransform: "uppercase", pointerEvents: "auto",
+                    }}>
+                      View on Kanka ↗
+                    </a>
                   )}
-                </div>
-                {marker.kankaUrl && (
-                  <a href={marker.kankaUrl} target="_blank" rel="noopener noreferrer" style={{
-                    display: "block", marginTop: "8px", padding: "4px 8px",
-                    background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
-                    borderRadius: "4px", color: "rgba(165,180,252,0.9)", fontSize: "9px",
-                    textAlign: "center", letterSpacing: "0.08em", textDecoration: "none",
-                    textTransform: "uppercase", pointerEvents: "auto",
-                  }}>
-                    View on Kanka ↗
-                  </a>
-                )}
-              </SvgTooltip>
+                </SvgTooltip>
               </g>
             );
           })()}

@@ -83,9 +83,8 @@ export function SvgTooltip({
   const caretCx = cardX + cardW / 2;
 
   // --- Accent border side ---
-  const accentBorder = flipped
-    ? { borderTop: `2px solid ${color}80` }
-    : { borderBottom: `2px solid ${color}80` };
+  const accentSide = `2px solid ${color}80`;
+  const plainSide  = `1px solid ${color}40`;
 
   return (
     <>
@@ -117,14 +116,16 @@ export function SvgTooltip({
           onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
           style={{
             background: "rgba(10,10,30,0.92)",
-            border: `1px solid ${color}40`,
+            borderTop:    flipped ? accentSide : plainSide,
+            borderRight:  plainSide,
+            borderBottom: flipped ? plainSide : accentSide,
+            borderLeft:   plainSide,
             borderRadius: "6px",
             padding: "8px 10px",
             fontFamily: "var(--font-cinzel), serif",
             width: `${cardW}px`,
             boxSizing: "border-box",
             boxShadow: `0 0 20px ${color}30`,
-            ...accentBorder,
           }}>
           {children}
         </div>

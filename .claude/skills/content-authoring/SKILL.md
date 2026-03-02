@@ -123,8 +123,7 @@ Colors defined in `lib/bodyColors.ts`. To add a new biome, add it to both `Plane
 - `kankaUrl`: Link to Kanka worldbuilding entry
 - `image`: Custom image path
 - `labelPosition`: `"top"` or `"bottom"` (default: `"bottom"`)
-- `lathanium`: Boolean flag for special resource
-- `nobility`: Boolean flag for noble presence
+- `special_attribute`: `"lathanium"` | `"nobility"` | `"purified"` — mutually exclusive special flag
 - `published`: Boolean (omit or true to show, false to hide)
 
 ## After Content Changes

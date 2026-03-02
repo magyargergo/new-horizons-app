@@ -49,7 +49,7 @@ Read CLAUDE.md first for project overview, then return here for agent-specific g
 4. Body: `{ id, name, type, orbitPosition(0-360), orbitDistance(0-1) }`
 5. Body types: `planet | station | moon | ship | fleet | asteroid-field`
 6. Planet biomes: `desert | jungle | molten | barren | irradiated | arctic | ocean | gas-giant | tropical | savanna | continental | alpine | mining | toxic | arid | ash`
-7. Optional body fields: `biome`, `lore`, `kankaUrl`, `image`, `labelPosition`, `lathanium`, `nobility`, `published`
+7. Optional body fields: `biome`, `lore`, `kankaUrl`, `image`, `labelPosition`, `special_attribute`, `published`
 
 ### New User
 

@@ -27,8 +27,7 @@ export interface CelestialBody {
   orbitPosition: number; // degrees 0-360
   orbitDistance: number; // 0-1 normalized distance from star
   labelPosition?: "top" | "bottom"; // default "bottom"
-  lathanium?: boolean;
-  nobility?: boolean;
+  special_attribute?: "lathanium" | "nobility" | "purified" | "lightbringer";
   kankaUrl?: string;
   image?: string;
   published?: boolean;
