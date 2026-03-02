@@ -108,43 +108,35 @@ export function SvgTooltip({
         pointerEvents="none"
       />
 
-      {/* Card content via foreignObject */}
+      {/* Card content via foreignObject — interactive so Kanka links are clickable */}
       <foreignObject
         x={cardX} y={cardY}
         width={cardW} height={cardH}
-        style={{ pointerEvents: "none" }}
       >
-        <div style={{
-          background: "rgba(10,10,30,0.92)",
-          border: `1px solid ${color}40`,
-          borderRadius: "6px",
-          padding: "8px 10px",
-          fontFamily: "var(--font-cinzel), serif",
-          width: `${cardW}px`,
-          boxSizing: "border-box",
-          boxShadow: `0 0 20px ${color}30`,
-          ...accentBorder,
-        }}>
+        <div
+          onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
+          style={{
+            background: "rgba(10,10,30,0.92)",
+            border: `1px solid ${color}40`,
+            borderRadius: "6px",
+            padding: "8px 10px",
+            fontFamily: "var(--font-cinzel), serif",
+            width: `${cardW}px`,
+            boxSizing: "border-box",
+            boxShadow: `0 0 20px ${color}30`,
+            ...accentBorder,
+          }}>
           {children}
         </div>
       </foreignObject>
 
-      {/* Single hit group wrapping all rects — mouse moving between children
-           won't fire leave/enter on the parent, preventing edge flicker */}
+      {/* Bridge rect: covers gap between anchor and card to prevent flicker */}
       <g onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-        {/* Bridge rect: covers gap between anchor and card, full card width */}
         <rect
           x={cardX}
           y={flipped ? anchorY : cardY + cardH}
           width={cardW}
           height={flipped ? Math.max(0, cardY - anchorY) : Math.max(0, anchorY - (cardY + cardH))}
-          fill="transparent"
-          pointerEvents="all"
-        />
-        {/* Card overlay rect: matches foreignObject bounds exactly */}
-        <rect
-          x={cardX} y={cardY}
-          width={cardW} height={cardH}
           fill="transparent"
           pointerEvents="all"
         />

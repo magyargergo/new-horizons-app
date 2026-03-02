@@ -45,6 +45,10 @@ export const SHIP_COLORS: BodyColors = {
   secondaryColor: "#0369A1",
 };
 
+// Fleet gradient: tip (leading edge) → base (trailing edge)
+export const FLEET_GRAD_TIP  = "#FFD700";
+export const FLEET_GRAD_BASE = "#4169E1";
+
 export const ASTEROID_FIELD_COLORS: BodyColors = {
   color: "#A8A29E",
   secondaryColor: "#57534E",

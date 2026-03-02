@@ -51,13 +51,13 @@
       "kankaUrl": "https://app.kanka.io/w/96303/entities/8893898"
     },
     {
-      "id": "2nd-exp-fleet",
-      "name": "2nd Exploratory Fleet",
-      "type": "fleet",
+      "id": "imperial-glory",
+      "name": "Imperial Glory",
+      "type": "ship",
       "orbitPosition": 250,
       "orbitDistance": 0.6,
       "labelPosition": "bottom",
-      "kankaUrl": "https://app.kanka.io/w/96303/entities/8893940"
+      "kankaUrl": "https://app.kanka.io/w/96303/entities/8893941"
     }
   ]
 }

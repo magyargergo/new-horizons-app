@@ -14,14 +14,24 @@ export interface VortexPin {
   ratio?: [number, number]; // [width, height] aspect ratio, e.g. [6, 3]
 }
 
+export interface ConnectionMarker {
+  type: "ship" | "fleet";
+  position: number;  // 0–1 along the visible (trimmed) line
+  // Inline card data
+  name: string;
+  allegiance?: string; // key into ALLEGIANCES registry
+  kankaUrl?: string;
+}
+
 export interface ConnectionLine {
   from: string;       // slug of a system or vortex
   to: string;         // slug of a system or vortex
   curvature?: number; // perpendicular offset of the bezier control point (default 0, positive = left of from→to)
   label?: string;     // optional label at the midpoint, follows the curve
   color?: string;     // defaults to sector color
-  dashes?: string;    // stroke-dasharray (default "10 7")
+  dashes?: string;    // stroke-dasharray (default "4 6")
   opacity?: number;   // line + label opacity (default 0.35)
+  marker?: ConnectionMarker;
 }
 
 export interface SectorMetadata {

@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import type { SectorMetadata, VortexPin, SystemPin, ConnectionLine } from "@/types/sector";
 import type { StarSystemMetadata } from "@/types/starsystem";
-import { getBodyColors } from "@/lib/bodyColors";
+import { getBodyColors, SHIP_COLORS, FLEET_GRAD_TIP, FLEET_GRAD_BASE } from "@/lib/bodyColors";
+import { ALLEGIANCES } from "@/lib/allegiances";
 import { toRad, annularSectorPath, arcStrokePath } from "@/lib/svgGeometry";
 import { SvgTooltip } from "@/components/SvgTooltip";
 import { useSvgTooltipTimer } from "@/hooks/useSvgTooltipTimer";
@@ -138,6 +139,13 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
     activeId: activeBodyId, activeIdRef: activeBodyIdRef, cardHoveredRef,
     show: showBody, hideNow: hideBody, scheduleHide, proximityHide, cardEnter, cardLeave,
   } = useSvgTooltipTimer();
+
+  const {
+    activeId: activeMarkerId, activeIdRef: activeMarkerIdRef,
+    show: showMarker, hideNow: hideMarker, scheduleHide: scheduleHideMarker,
+    cardEnter: markerCardEnter, cardLeave: markerCardLeave,
+  } = useSvgTooltipTimer();
+
 
   useEffect(() => {
     onSystemChange?.(activeSystemSlug);
@@ -276,14 +284,15 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
   const handleSvgClick = useCallback(() => {
     if (didDragRef.current) return;
     if (activeBodyIdRef.current) hideBody();
-  }, [activeBodyIdRef, hideBody]);
+    if (activeMarkerIdRef.current) hideMarker();
+  }, [activeBodyIdRef, hideBody, activeMarkerIdRef, hideMarker]);
 
   const gradientDefs = useMemo(() => (
     <defs>
       {/* Fleet ships: tip (left) = gold, base (right) = blue */}
       <linearGradient id="fleetGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#FFD700" />
-        <stop offset="100%" stopColor="#4169E1" />
+        <stop offset="0%"   stopColor={FLEET_GRAD_TIP}  />
+        <stop offset="100%" stopColor={FLEET_GRAD_BASE} />
       </linearGradient>
       {sector.systems.flatMap((pin) => {
         const sys = systemsData[pin.slug];
@@ -538,6 +547,60 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                     </textPath>
                   </text>
                 )}
+
+                {/* ── Marker (ship / fleet) along the line ── */}
+                {conn.marker && (() => {
+                  const marker = conn.marker;
+                  const isActive = activeMarkerId === String(connIdx);
+                  const t = Math.max(0, Math.min(1, marker.position));
+                  const mt = 1 - t;
+                  const mpx = mt*mt*p0t.x + 2*mt*t*p1.x + t*t*p2t.x;
+                  const mpy = mt*mt*p0t.y + 2*mt*t*p1.y + t*t*p2t.y;
+                  const tanX = 2*mt*(p1.x-p0t.x) + 2*t*(p2t.x-p1.x);
+                  const tanY = 2*mt*(p1.y-p0t.y) + 2*t*(p2t.y-p1.y);
+                  const angle = Math.atan2(tanY, tanX) * 180 / Math.PI;
+                  const rotAngle = marker.type === "ship" ? angle + 90 : angle - 180;
+                  const shipGradId = `conn-ship-${connIdx}`;
+                  const allegiance = marker.allegiance ? ALLEGIANCES[marker.allegiance] : undefined;
+                  const shipSecondary = allegiance?.color ?? SHIP_COLORS.secondaryColor;
+
+                  return (
+                    <g transform={`translate(${mpx.toFixed(1)},${mpy.toFixed(1)}) rotate(${rotAngle.toFixed(1)})`}
+                      style={{ cursor: "pointer", pointerEvents: "all" }}
+                      onClick={(e) => { e.stopPropagation(); showMarker(String(connIdx)); }}
+                      onMouseLeave={scheduleHideMarker}>
+
+                      {marker.type === "ship" && (
+                        <>
+                          <defs>
+                            <radialGradient id={shipGradId}>
+                              <stop offset="0%"   stopColor={SHIP_COLORS.color} stopOpacity="1"   />
+                              <stop offset="70%"  stopColor={shipSecondary}      stopOpacity="0.9" />
+                              <stop offset="100%" stopColor={shipSecondary}      stopOpacity="0.7" />
+                            </radialGradient>
+                          </defs>
+                          <polygon points="0,-9 -6,5 6,5"
+                            fill={`url(#${shipGradId})`}
+                            stroke={isActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)"}
+                            strokeWidth={isActive ? "1.5" : "0.5"}
+                            style={{ filter: `drop-shadow(0 0 ${isActive ? 8 : 3}px ${SHIP_COLORS.color})` }} />
+                        </>
+                      )}
+
+                      {marker.type === "fleet" && (
+                        <g style={{ filter: isActive ? `drop-shadow(0 0 8px ${FLEET_GRAD_TIP})` : undefined }}>
+                          {FLEET_SHIPS.map(({ dx, dy, r }, i) => (
+                            <polygon key={i} points={triLeft(dx * 0.5, dy * 0.5, r * 0.5)}
+                              fill="url(#fleetGrad)" fillOpacity={0.9}
+                              stroke={isActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)"}
+                              strokeWidth={isActive ? "1" : "0.4"} />
+                          ))}
+                        </g>
+                      )}
+
+                    </g>
+                  );
+                })()}
               </g>
             );
           })}
@@ -886,6 +949,93 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
               </g>
             );
           })}
+
+          {/* ── Connection marker cards — top layer so they render above systems ── */}
+          {activeMarkerId !== null && (() => {
+            const connIdx = parseInt(activeMarkerId);
+            const conn = sector.connections?.[connIdx];
+            const marker = conn?.marker;
+            if (!conn || !marker) return null;
+
+            const fromSys = sector.systems.find(s => s.slug === conn.from) ?? sector.vortexes?.find(v => v.slug === conn.from);
+            const toSys   = sector.systems.find(s => s.slug === conn.to)   ?? sector.vortexes?.find(v => v.slug === conn.to);
+            if (!fromSys || !toSys) return null;
+
+            const p0 = { x: fromSys.x, y: fromSys.y };
+            const p2 = { x: toSys.x,   y: toSys.y   };
+            const mx = (p0.x + p2.x) / 2, my = (p0.y + p2.y) / 2;
+            const segDx = p2.x - p0.x, segDy = p2.y - p0.y;
+            const segLen = Math.sqrt(segDx*segDx + segDy*segDy);
+            const curvature = conn.curvature ?? 0;
+            const p1 = { x: mx + (segLen > 0 ? (-segDy/segLen)*curvature : 0), y: my + (segLen > 0 ? (segDx/segLen)*curvature : 0) };
+
+            const fromSysSys = sector.systems.find(s => s.slug === conn.from);
+            const toSysSys   = sector.systems.find(s => s.slug === conn.to);
+            const fromRadius = fromSysSys ? (orbitDataMap.get(fromSysSys.slug)?.maxOrbit ?? 40) * SYS_SCALE + 8 : ((sector.vortexes?.find(v => v.slug === conn.from)?.radius) ?? 80);
+            const toRadius   = toSysSys   ? (orbitDataMap.get(toSysSys.slug)?.maxOrbit   ?? 40) * SYS_SCALE + 8 : ((sector.vortexes?.find(v => v.slug === conn.to)?.radius)   ?? 80);
+
+            const tan0x = p1.x - p0.x, tan0y = p1.y - p0.y, tan0len = Math.sqrt(tan0x*tan0x + tan0y*tan0y);
+            const p0t = tan0len > 0 ? { x: p0.x + (tan0x/tan0len)*fromRadius, y: p0.y + (tan0y/tan0len)*fromRadius } : p0;
+            const tan1x = p1.x - p2.x, tan1y = p1.y - p2.y, tan1len = Math.sqrt(tan1x*tan1x + tan1y*tan1y);
+            const p2t = tan1len > 0 ? { x: p2.x + (tan1x/tan1len)*toRadius,   y: p2.y + (tan1y/tan1len)*toRadius   } : p2;
+
+            const t = Math.max(0, Math.min(1, marker.position));
+            const mt = 1 - t;
+            const mpx = mt*mt*p0t.x + 2*mt*t*p1.x + t*t*p2t.x;
+            const mpy = mt*mt*p0t.y + 2*mt*t*p1.y + t*t*p2t.y;
+
+            const allegiance = marker.allegiance ? ALLEGIANCES[marker.allegiance] : undefined;
+            const cardAccent = allegiance?.color ?? SHIP_COLORS.color;
+            const cardW = 220;
+            const cardH = 50 + (marker.kankaUrl ? 34 : 0);
+
+            return (
+              <g transform={`translate(${mpx.toFixed(1)},${mpy.toFixed(1)}) scale(${SYS_SCALE * 2})`}>
+              <SvgTooltip
+                anchorX={0} anchorY={0}
+                cardW={cardW} cardH={cardH}
+                color={cardAccent} clearance={42}
+                viewBox={vb}
+                parentOffsetX={mpx} parentOffsetY={mpy}
+                scale={SYS_SCALE * 2}
+                onMouseEnter={markerCardEnter} onMouseLeave={markerCardLeave}>
+                <div style={{ display: "flex", alignItems: "stretch", gap: "6px", marginBottom: "5px" }}>
+                  <div style={{ flex: "0 0 70%" }}>
+                    <div style={{ color: cardAccent, fontSize: "11px", fontWeight: 600, marginBottom: "3px" }}>
+                      {marker.name}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {marker.type}
+                      {allegiance && (
+                        <>
+                          <span style={{ margin: "0 5px", opacity: 0.4 }}>·</span>
+                          <span style={{ color: allegiance.color }}>{allegiance.name}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {allegiance && (
+                    <div style={{ flex: "0 0 30%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <img src={allegiance.logo} alt={allegiance.name}
+                        style={{ width: "28px", height: "28px", objectFit: "contain" }} />
+                    </div>
+                  )}
+                </div>
+                {marker.kankaUrl && (
+                  <a href={marker.kankaUrl} target="_blank" rel="noopener noreferrer" style={{
+                    display: "block", marginTop: "8px", padding: "4px 8px",
+                    background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
+                    borderRadius: "4px", color: "rgba(165,180,252,0.9)", fontSize: "9px",
+                    textAlign: "center", letterSpacing: "0.08em", textDecoration: "none",
+                    textTransform: "uppercase", pointerEvents: "auto",
+                  }}>
+                    View on Kanka ↗
+                  </a>
+                )}
+              </SvgTooltip>
+              </g>
+            );
+          })()}
 
           {/* Empty state */}
           {sector.systems.length === 0 && (
