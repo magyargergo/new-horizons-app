@@ -804,7 +804,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                           {body.special_attribute === "lathanium" && (() => {
                             const dx = pos.x + labelR * 0.85;
                             const dy = pos.y - labelR * 0.85;
-                            const s = 5;
+                            const s = 6;
                             return (
                               <polygon
                                 points={`${dx},${dy - s} ${dx + s},${dy} ${dx},${dy + s} ${dx - s},${dy}`}
@@ -836,7 +836,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                             const dy = pos.y - labelR * 0.85;
                             return (
                               <path
-                                d={`M ${dx} ${dy-5} L ${dx+4} ${dy} L ${dx+2} ${dy+3} L ${dx-2} ${dy+3} L ${dx-4} ${dy} Z M ${dx+2} ${dy+3} L ${dx+4} ${dy+7} M ${dx-2} ${dy+3} L ${dx-4} ${dy+7}`}
+                                d={`M ${dx} ${dy - 5} L ${dx + 4} ${dy} L ${dx + 2} ${dy + 3} L ${dx - 2} ${dy + 3} L ${dx - 4} ${dy} Z M ${dx + 2} ${dy + 3} L ${dx + 4} ${dy + 7} M ${dx - 2} ${dy + 3} L ${dx - 4} ${dy + 7}`}
                                 fill="none"
                                 stroke="white"
                                 strokeWidth="2"
@@ -849,7 +849,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                           {body.special_attribute === "lightbringer" && (() => {
                             const dx = pos.x + labelR * 0.85;
                             const dy = pos.y - labelR * 0.85;
-                            const o = 5; const i = 2;
+                            const o = 6; const i = 2.4;
                             return (
                               <polygon
                                 points={`${dx + o},${dy} ${dx + i},${dy + i} ${dx},${dy + o} ${dx - i},${dy + i} ${dx - o},${dy} ${dx - i},${dy - i} ${dx},${dy - o} ${dx + i},${dy - i}`}
@@ -857,6 +857,35 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                                 stroke="#FFE87A"
                                 strokeWidth="2"
                                 style={{ filter: "drop-shadow(0 0 6px #FFE87A)" }}
+                              />
+                            );
+                          })()}
+
+                          {body.special_attribute === "cult" && (() => {
+                            const dx = pos.x + labelR * 0.85;
+                            const dy = pos.y - labelR * 0.85;
+                            return (
+                              <path
+                                d={`M ${dx - 6} ${dy - 6} L ${dx - 6} ${dy + 6} M ${dx + 6} ${dy - 6} L ${dx + 6} ${dy + 6} M ${dx - 6} ${dy - 6} L ${dx + 6} ${dy + 6} M ${dx + 6} ${dy - 6} L ${dx - 6} ${dy + 6}`}
+                                fill="none"
+                                stroke="#B91C1C"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                style={{ filter: "drop-shadow(0 0 6px #B91C1C)" }}
+                              />
+                            );
+                          })()}
+
+                          {body.special_attribute === "alien_int" && (() => {
+                            const dx = pos.x + labelR * 0.85;
+                            const dy = pos.y - labelR * 0.85;
+                            return (
+                              <polygon
+                                points={`${dx-8},${dy} ${dx},${dy-4} ${dx+8},${dy} ${dx},${dy+4}`}
+                                fill="none"
+                                stroke="#8B5CF6"
+                                strokeWidth="2"
+                                style={{ filter: "drop-shadow(0 0 6px #8B5CF6)" }}
                               />
                             );
                           })()}
@@ -911,7 +940,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                           {body.special_attribute === "lathanium" && (
                             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                               <span style={{ display: "inline-block", width: "7px", height: "7px", background: "#1D4ED8", transform: "rotate(45deg)", boxShadow: "0 0 4px #3B82F6", flexShrink: 0 }} />
-                              <span style={{ color: "#93C5FD", fontSize: "9px", letterSpacing: "0.05em" }}>This planet has Lathanium</span>
+                              <span style={{ color: "#93C5FD", fontSize: "9px", letterSpacing: "0.05em" }}>Lathanium resource available</span>
                             </div>
                           )}
                           {body.special_attribute === "nobility" && (
@@ -940,6 +969,26 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange }: 
                                   style={{ filter: "drop-shadow(0 0 2px #FFE87A)" }} />
                               </svg>
                               <span style={{ color: "#FFE87A", fontSize: "9px", letterSpacing: "0.05em" }}>Lightbringer presence on planet</span>
+                            </div>
+                          )}
+                          {body.special_attribute === "cult" && (
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                              <svg width="9" height="9" viewBox="-7 -7 14 14" style={{ flexShrink: 0 }}>
+                                <path d="M -6,-6 L -6,6 M 6,-6 L 6,6 M -6,-6 L 6,6 M 6,-6 L -6,6"
+                                  fill="none" stroke="#B91C1C" strokeWidth="1.5" strokeLinecap="round"
+                                  style={{ filter: "drop-shadow(0 0 2px #B91C1C)" }} />
+                              </svg>
+                              <span style={{ color: "#B91C1C", fontSize: "9px", letterSpacing: "0.05em" }}>Cultist activity detected</span>
+                            </div>
+                          )}
+                          {body.special_attribute === "alien_int" && (
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                              <svg width="12" height="7" viewBox="-9 -5 18 10" style={{ flexShrink: 0 }}>
+                                <polygon points="-8,0 0,-4 8,0 0,4"
+                                  fill="none" stroke="#8B5CF6" strokeWidth="1"
+                                  style={{ filter: "drop-shadow(0 0 2px #8B5CF6)" }} />
+                              </svg>
+                              <span style={{ color: "#8B5CF6", fontSize: "9px", letterSpacing: "0.05em" }}>Alien intelligence</span>
                             </div>
                           )}
                           {body.kankaUrl && (
