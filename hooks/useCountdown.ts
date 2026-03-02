@@ -11,7 +11,6 @@ export function useCountdown(seconds: number, onComplete: () => void) {
       setCount((n) => {
         if (n <= 1) {
           clearInterval(id);
-          onCompleteRef.current();
           return 0;
         }
         return n - 1;
@@ -19,6 +18,12 @@ export function useCountdown(seconds: number, onComplete: () => void) {
     }, 1000);
     return () => clearInterval(id);
   }, [seconds]);
+
+  useEffect(() => {
+    if (count === 0 && seconds > 0) {
+      onCompleteRef.current();
+    }
+  }, [count, seconds]);
 
   const progress = seconds > 0 ? ((seconds - count) / seconds) * 100 : 100;
 
