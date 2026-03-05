@@ -60,6 +60,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
 
   const focusSystem = useCallback((pin: SystemPin) => {
     setActiveSystemSlug(pin.slug);
+    setHoveredSlug(null);
     hideBody();
     const w = FULL_W / FOCUS_ZOOM;
     const h = FULL_H / FOCUS_ZOOM;
@@ -68,6 +69,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
 
   const exitSystem = useCallback(() => {
     setActiveSystemSlug(null);
+    setHoveredSlug(null);
     hideBody();
     resetPanZoom();
   }, [hideBody, resetPanZoom]);
@@ -100,6 +102,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
       }
     } else if (currentZoom < AUTO_SELECT_ZOOM && activeSystemSlug) {
       setActiveSystemSlug(null);
+      setHoveredSlug(null);
       hideBody();
     }
   }, [vb, activeSystemSlug, sector.systems, hideBody]);
