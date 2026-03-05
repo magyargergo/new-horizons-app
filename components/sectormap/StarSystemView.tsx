@@ -24,6 +24,7 @@ import { SpecialAttributeIcon } from "@/components/specialAttributes/SpecialAttr
 interface StarSystemViewProps {
   pin: SystemPin;
   sys: StarSystemMetadata | undefined;
+  sectorSlug: string;
   sectorColor: string;
   isActive: boolean;
   isDimmed: boolean;
@@ -38,7 +39,7 @@ interface StarSystemViewProps {
 }
 
 export const StarSystemView = memo(function StarSystemView({
-  pin, sys, sectorColor, isActive, isDimmed, noActiveSystem,
+  pin, sys, sectorSlug, sectorColor, isActive, isDimmed, noActiveSystem,
   isHovered, orbitData, vb, activeBodyId, tooltipActions,
   onFocusSystem, onHoverSystem,
 }: StarSystemViewProps) {
@@ -185,6 +186,7 @@ export const StarSystemView = memo(function StarSystemView({
                   posX={pos.x}
                   posY={pos.y}
                   pinSlug={pin.slug}
+                  sectorSlug={sectorSlug}
                   bodyColor={bodyColor}
                   isBodyActive={isBodyActive}
                   isActive={isActive}

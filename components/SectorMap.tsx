@@ -321,6 +321,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
                 key={pin.slug}
                 pin={pin}
                 sys={sys}
+                sectorSlug={sector.slug}
                 sectorColor={sector.color}
                 isActive={isActive}
                 isDimmed={activeSystemSlug !== null && !isActive}
