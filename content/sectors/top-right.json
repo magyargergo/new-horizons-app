@@ -29,38 +29,12 @@
     },
     {
       "from": "callisto",
-      "to": "ertamis",
-      "curvature": -40,
-      "color": "#6b7280",
-      "marker": {
-        "type": "fleet",
-        "position": 0.35,
-        "name": "2nd Exploratory Fleet",
-        "allegiance": "feyrose",
-        "kankaUrl": "https://app.kanka.io/w/96303/entities/8893940"
-      }
-    },
-    {
-      "from": "callisto",
-      "to": "belliar",
-      "color": "#6b7280",
-      "curvature": -50,
-      "marker": {
-        "type": "ship",
-        "position": 0.35,
-        "name": "Vanguard Wolf",
-        "allegiance": "ashford",
-        "kankaUrl": "https://app.kanka.io/w/96303/entities/8945009"
-      }
-    },
-    {
-      "from": "callisto",
       "to": "pelao",
       "color": "#6b7280",
       "curvature": -50,
       "marker": {
         "type": "ship",
-        "position": 0.2,
+        "position": 0.95,
         "name": "Arch of Laurel",
         "allegiance": "fairfield",
         "kankaUrl": "https://app.kanka.io/w/96303/entities/8944998"
