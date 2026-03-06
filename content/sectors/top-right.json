@@ -1,6 +1,6 @@
 {
   "slug": "atlas-sector",
-  "name": "Atlas sector",
+  "name": "Atlas Sector",
   "description": "The outermost frontier of charted space. Ancient ruins dot the fringe worlds here, and the silence between stars feels older than memory.",
   "color": "#6366F1",
   "nebulaColor": "#1E1B4B",
@@ -29,38 +29,12 @@
     },
     {
       "from": "callisto",
-      "to": "ertamis",
-      "curvature": -40,
-      "color": "#6b7280",
-      "marker": {
-        "type": "fleet",
-        "position": 0.35,
-        "name": "2nd Exploratory Fleet",
-        "allegiance": "feyrose",
-        "kankaUrl": "https://app.kanka.io/w/96303/entities/8893940"
-      }
-    },
-    {
-      "from": "callisto",
-      "to": "belliar",
-      "color": "#6b7280",
-      "curvature": -50,
-      "marker": {
-        "type": "ship",
-        "position": 0.35,
-        "name": "Vanguard Wolf",
-        "allegiance": "ashford",
-        "kankaUrl": "https://app.kanka.io/w/96303/entities/8945009"
-      }
-    },
-    {
-      "from": "callisto",
       "to": "pelao",
       "color": "#6b7280",
       "curvature": -50,
       "marker": {
         "type": "ship",
-        "position": 0.2,
+        "position": 0.95,
         "name": "Arch of Laurel",
         "allegiance": "fairfield",
         "kankaUrl": "https://app.kanka.io/w/96303/entities/8944998"
@@ -71,17 +45,21 @@
     {
       "slug": "pelao",
       "x": 800,
-      "y": 280
+      "y": 280,
+      "allegiance": "fairfield"
     },
     {
       "slug": "belliar",
       "x": 190,
-      "y": -70
+      "y": -70,
+      "allegiance": "ashford"
     },
     {
       "slug": "ertamis",
       "x": 250,
-      "y": 380
+      "y": 380,
+      "allegiance": "feyrose",
+      "territoryRadius": 165
     },
     {
       "slug": "pernat",
@@ -91,7 +69,9 @@
     {
       "slug": "callisto",
       "x": 500,
-      "y": 150
+      "y": 150,
+      "allegiance": "feyrose",
+      "territoryRadius": 155
     }
   ]
 }

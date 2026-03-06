@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { SectorMetadata, VortexPin, SystemPin } from "@/types/sector";
 import type { StarSystemMetadata } from "@/types/starsystem";
 import { getBodyColors, FLEET_GRAD_TIP, FLEET_GRAD_BASE } from "@/lib/bodyColors";
-import { toRad, annularSectorPath, arcStrokePath } from "@/lib/svgGeometry";
+
 import { useSvgTooltipTimer } from "@/hooks/useSvgTooltipTimer";
 import { useSvgPanZoom } from "@/hooks/useSvgPanZoom";
 import {
-  FULL_W, FULL_H, SECTOR_TERRITORY, TERRITORY_INNER_R, TERRITORY_OUTER_R,
+  FULL_W, FULL_H,
   MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, FOCUS_ZOOM, AUTO_SELECT_ZOOM,
-  SYS_SCALE, SYS_MAX_R, wavyCloudPath,
+  SYS_MAX_R, SYS_SCALE, wavyCloudPath,
 } from "@/lib/sectorMapHelpers";
+import { SectorArcLayer } from "@/components/sectormap/SectorArcLayer";
 import { ConnectionLayer } from "@/components/sectormap/ConnectionLayer";
+import { TerritoryLayer } from "@/components/sectormap/TerritoryLayer";
 import { StarSystemView } from "@/components/sectormap/StarSystemView";
 
 interface SectorMapProps {
@@ -24,12 +26,13 @@ interface SectorMapProps {
 
 export default function SectorMap({ sector, systemsData = {}, onSystemChange, children }: SectorMapProps) {
   const {
-    containerRef, svgRef, vb, setVb, zoom, cursorGrab, didDragRef,
-    zoomIn, zoomOut, resetView: resetPanZoom, handlers,
+    containerRef, svgRef, vb, zoom, cursorGrab, didDragRef,
+    zoomIn, zoomOut, resetView: resetPanZoom, animateToVb, isAnimatingRef, handlers,
   } = useSvgPanZoom({ width: FULL_W, height: FULL_H, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM, zoomStep: ZOOM_STEP });
 
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [activeSystemSlug, setActiveSystemSlug] = useState<string | null>(null);
+  const cursorClientRef = useRef<{ x: number; y: number } | null>(null);
 
   // Body tooltip (in-system celestial bodies)
   const {
@@ -50,25 +53,61 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
     onSystemChange?.(activeSystemSlug);
   }, [activeSystemSlug, onSystemChange]);
 
+  const handleSvgMouseMove = useCallback((e: React.MouseEvent) => {
+    cursorClientRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  /** Find which system pin the cursor is over (in SVG space), or null. */
+  const systemUnderCursor = useCallback(() => {
+    const svg = svgRef.current;
+    const cursor = cursorClientRef.current;
+    if (!svg || !cursor) return null;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return null;
+    const pt = svg.createSVGPoint();
+    pt.x = cursor.x;
+    pt.y = cursor.y;
+    const svgPt = pt.matrixTransform(ctm.inverse());
+    for (const pin of sector.systems) {
+      const sys = systemsData[pin.slug];
+      const maxOrbit = sys
+        ? Math.max(...sys.bodies.map(b => b.orbitDistance), 0.3) * SYS_MAX_R
+        : 40;
+      const hitR = (maxOrbit + 50) * SYS_SCALE;
+      const dx = svgPt.x - pin.x;
+      const dy = svgPt.y - pin.y;
+      if (dx * dx + dy * dy <= hitR * hitR) return pin.slug;
+    }
+    return null;
+  }, [svgRef, sector.systems, systemsData]);
+
   const resetView = useCallback(() => {
+    const wasActive = activeSystemSlug !== null;
     setActiveSystemSlug(null);
+    setHoveredSlug(wasActive ? null : systemUnderCursor());
     hideBody();
-    resetPanZoom();
-  }, [hideBody, resetPanZoom]);
+    if (wasActive) {
+      animateToVb({ x: 0, y: 0, w: FULL_W, h: FULL_H }, 500);
+    } else {
+      resetPanZoom();
+    }
+  }, [activeSystemSlug, hideBody, resetPanZoom, animateToVb, systemUnderCursor]);
 
   const focusSystem = useCallback((pin: SystemPin) => {
     setActiveSystemSlug(pin.slug);
+    setHoveredSlug(null);
     hideBody();
     const w = FULL_W / FOCUS_ZOOM;
     const h = FULL_H / FOCUS_ZOOM;
-    setVb({ x: pin.x - w / 2, y: pin.y - h / 2, w, h });
-  }, [hideBody, setVb]);
+    animateToVb({ x: pin.x - w / 2, y: pin.y - h / 2, w, h }, 500);
+  }, [hideBody, animateToVb]);
 
   const exitSystem = useCallback(() => {
     setActiveSystemSlug(null);
+    setHoveredSlug(systemUnderCursor());
     hideBody();
-    resetPanZoom();
-  }, [hideBody, resetPanZoom]);
+    animateToVb({ x: 0, y: 0, w: FULL_W, h: FULL_H }, 500);
+  }, [hideBody, animateToVb, systemUnderCursor]);
 
   // Escape key exits system zoom
   useEffect(() => {
@@ -78,8 +117,9 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
     return () => window.removeEventListener("keydown", onKey);
   }, [activeSystemSlug, exitSystem]);
 
-  // Auto-select system when zoomed in close enough
+  // Auto-select system when zoomed in close enough (skip during animation)
   useEffect(() => {
+    if (isAnimatingRef.current) return;
     const currentZoom = FULL_W / vb.w;
     if (currentZoom >= AUTO_SELECT_ZOOM && !activeSystemSlug) {
       const cx = vb.x + vb.w / 2;
@@ -94,13 +134,15 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
       }
       if (best && bestDist < Math.min(vb.w, vb.h) * 0.6) {
         setActiveSystemSlug(best.slug);
+        setHoveredSlug(null);
         hideBody();
       }
     } else if (currentZoom < AUTO_SELECT_ZOOM && activeSystemSlug) {
       setActiveSystemSlug(null);
+      setHoveredSlug(systemUnderCursor());
       hideBody();
     }
-  }, [vb, activeSystemSlug, sector.systems, hideBody]);
+  }, [vb, activeSystemSlug, sector.systems, hideBody, systemUnderCursor, isAnimatingRef]);
 
   const handleSvgClick = useCallback(() => {
     if (didDragRef.current) return;
@@ -143,7 +185,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
         ];
       })}
     </defs>
-  ), [sector.systems, systemsData]);
+  ), [sector.slug, sector.systems, systemsData]);
 
   // Precompute which system owns the active body tooltip — O(N*M) once instead of per-system
   const activeBodySystemSlug = useMemo(() => {
@@ -190,54 +232,15 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
           className="absolute inset-0 w-full h-full"
           style={{ userSelect: "none" }}
           onClick={handleSvgClick}
+          onMouseMove={handleSvgMouseMove}
         >
           {gradientDefs}
 
           {/* ── Sector territory ── */}
-          {(() => {
-            const t = SECTOR_TERRITORY[sector.slug];
-            if (!t) return null;
-            const { cx, cy, arcStart, arcEnd } = t;
-            const labelR = TERRITORY_OUTER_R + 30;
-            const ls = toRad(arcStart), le = toRad(arcEnd);
-            const lxs = cx + labelR * Math.cos(ls), lys = cy + labelR * Math.sin(ls);
-            const lxe = cx + labelR * Math.cos(le), lye = cy + labelR * Math.sin(le);
-            const needsReverse = sector.slug === "denerum-sector" || sector.slug === "castell-sector";
-            const labelPathD = needsReverse
-              ? `M ${lxe} ${lye} A ${labelR} ${labelR} 0 0 0 ${lxs} ${lys}`
-              : `M ${lxs} ${lys} A ${labelR} ${labelR} 0 0 1 ${lxe} ${lye}`;
-            const labelPathId = `sector-label-${sector.slug}`;
+          <SectorArcLayer sectorSlug={sector.slug} sectorName={sector.name} sectorColor={sector.color} />
 
-            return (
-              <g style={{ pointerEvents: "none" }}>
-                <defs>
-                  <path id={labelPathId} d={labelPathD} />
-                </defs>
-                <path d={annularSectorPath(cx, cy, TERRITORY_INNER_R, TERRITORY_OUTER_R, arcStart, arcEnd)}
-                  fill={sector.color} fillOpacity={0.07} />
-                <path d={arcStrokePath(cx, cy, TERRITORY_OUTER_R, arcStart, arcEnd)}
-                  fill="none" stroke={sector.color} strokeOpacity={0.25} strokeWidth={1.5} />
-                <path d={arcStrokePath(cx, cy, TERRITORY_INNER_R, arcStart, arcEnd)}
-                  fill="none" stroke={sector.color} strokeOpacity={0.2} strokeWidth={1} strokeDasharray="4 8" />
-                {[arcStart, arcEnd].map((deg) => {
-                  const r = toRad(deg);
-                  return (
-                    <line key={deg}
-                      x1={cx + TERRITORY_INNER_R * Math.cos(r)} y1={cy + TERRITORY_INNER_R * Math.sin(r)}
-                      x2={cx + TERRITORY_OUTER_R * Math.cos(r)} y2={cy + TERRITORY_OUTER_R * Math.sin(r)}
-                      stroke={sector.color} strokeOpacity={0.2} strokeWidth={1} strokeDasharray="6 10" />
-                  );
-                })}
-                <text
-                  fontFamily="var(--font-cinzel), serif" fontSize="32" fontWeight="600"
-                  fill={sector.color} fillOpacity={0.3} letterSpacing="14">
-                  <textPath href={`#${labelPathId}`} startOffset="50%" textAnchor="middle">
-                    {sector.name.toUpperCase()}
-                  </textPath>
-                </text>
-              </g>
-            );
-          })()}
+          {/* ── System allegiance territories ── */}
+          <TerritoryLayer systems={sector.systems} sectorSlug={sector.slug} />
 
           {/* ── Connection lines ── */}
           <ConnectionLayer
@@ -263,7 +266,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
             const ry = r * (rh / Math.max(rw, rh));
             return (
               <g key={v.slug} style={{ pointerEvents: "none" }}>
-                <path d={wavyCloudPath(v.x, v.y, r, v.ratio)}
+                <path d={wavyCloudPath(v.x, v.y, r, { ratio: v.ratio })}
                   fill={color} fillOpacity={0.12}
                   stroke={color} strokeOpacity={0.35} strokeWidth={1.5} />
                 <text x={v.x} y={v.y + ry + 18} textAnchor="middle"
@@ -284,6 +287,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
                 key={pin.slug}
                 pin={pin}
                 sys={sys}
+                sectorSlug={sector.slug}
                 sectorColor={sector.color}
                 isActive={isActive}
                 isDimmed={activeSystemSlug !== null && !isActive}

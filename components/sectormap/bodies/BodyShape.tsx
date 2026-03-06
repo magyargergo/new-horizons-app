@@ -10,13 +10,14 @@ interface BodyShapeProps {
   posX: number;
   posY: number;
   pinSlug: string;
+  sectorSlug: string;
   bodyColor: string;
   isBodyActive: boolean;
   isActive: boolean;
 }
 
 export function BodyShape({
-  bodyId, bodyType, posX, posY, pinSlug,
+  bodyId, bodyType, posX, posY, pinSlug, sectorSlug,
   bodyColor, isBodyActive, isActive,
 }: BodyShapeProps) {
   const fillId = `url(#body-${pinSlug}-${bodyId})`;
@@ -60,7 +61,7 @@ export function BodyShape({
         <g style={glowStyle}>
           {FLEET_SHIPS.map(({ dx, dy, r }, i) => (
             <polygon key={i} points={triLeft(posX + dx, posY + dy, r)}
-              fill="url(#fleetGrad)" fillOpacity={0.9}
+              fill={`url(#fleetGrad-${sectorSlug})`} fillOpacity={0.9}
               stroke={activeStroke}
               strokeWidth={isBodyActive ? "1.5" : "0.6"} />
           ))}

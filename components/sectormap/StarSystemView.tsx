@@ -24,6 +24,7 @@ import { SpecialAttributeIcon } from "@/components/specialAttributes/SpecialAttr
 interface StarSystemViewProps {
   pin: SystemPin;
   sys: StarSystemMetadata | undefined;
+  sectorSlug: string;
   sectorColor: string;
   isActive: boolean;
   isDimmed: boolean;
@@ -38,7 +39,7 @@ interface StarSystemViewProps {
 }
 
 export const StarSystemView = memo(function StarSystemView({
-  pin, sys, sectorColor, isActive, isDimmed, noActiveSystem,
+  pin, sys, sectorSlug, sectorColor, isActive, isDimmed, noActiveSystem,
   isHovered, orbitData, vb, activeBodyId, tooltipActions,
   onFocusSystem, onHoverSystem,
 }: StarSystemViewProps) {
@@ -122,7 +123,7 @@ export const StarSystemView = memo(function StarSystemView({
     >
       {/* Hit area — only in overview mode */}
       {noActiveSystem && (
-        <circle cx={pin.x} cy={pin.y} r={(maxOrbit + 20) * SYS_SCALE} fill="transparent" />
+        <circle cx={pin.x} cy={pin.y} r={(maxOrbit + 50) * SYS_SCALE} fill="transparent" />
       )}
 
       {sys ? (
@@ -144,16 +145,29 @@ export const StarSystemView = memo(function StarSystemView({
           {/* Orbit rings */}
           {orbitDistances.map((dist) => (
             <circle key={dist} cx={0} cy={0} r={dist * SYS_MAX_R}
-              fill="none" stroke="rgba(99,102,241,0.15)"
-              strokeWidth="1" strokeDasharray="6 10" />
+              fill="none"
+              stroke={isHovered ? "rgba(148,151,255,0.38)" : "rgba(99,102,241,0.15)"}
+              strokeWidth={isHovered ? 1.5 : 1}
+              strokeDasharray="6 10"
+              style={{ transition: "stroke 0.25s, stroke-width 0.25s" }} />
           ))}
 
           {/* Star */}
           <circle cx={0} cy={0} r={80} fill={`url(#starCorona-${pin.slug})`}
             style={{ animation: "starPulse 4s ease-in-out infinite" }} />
           <circle cx={0} cy={0} r={40} fill={`url(#starGlow-${pin.slug})`} />
+          {/* Hover halo ring */}
+          <circle cx={0} cy={0} r={65} fill="none"
+            stroke={sys.star.color} strokeWidth={12}
+            strokeOpacity={isHovered ? 0.18 : 0}
+            style={{ transition: "stroke-opacity 0.25s" }} />
           <circle cx={0} cy={0} r={22} fill={sys.star.color}
-            style={{ filter: `drop-shadow(0 0 12px ${sys.star.color})` }} />
+            style={{
+              filter: isHovered
+                ? `drop-shadow(0 0 22px ${sys.star.color}) drop-shadow(0 0 8px white)`
+                : `drop-shadow(0 0 12px ${sys.star.color})`,
+              transition: "filter 0.25s",
+            }} />
           <text x={0} y={55} textAnchor="middle"
             fill={sys.star.color} fontSize="15"
             fontFamily="var(--font-cinzel), serif" fontWeight="600">
@@ -185,6 +199,7 @@ export const StarSystemView = memo(function StarSystemView({
                   posX={pos.x}
                   posY={pos.y}
                   pinSlug={pin.slug}
+                  sectorSlug={sectorSlug}
                   bodyColor={bodyColor}
                   isBodyActive={isBodyActive}
                   isActive={isActive}
@@ -247,8 +262,10 @@ export const StarSystemView = memo(function StarSystemView({
           <text
             x={pin.x} y={labelY} textAnchor="middle"
             fill={isHovered ? "white" : "rgba(255,255,255,0.55)"}
-            fontSize="11" fontFamily="var(--font-cinzel), serif"
-            style={{ pointerEvents: "none" }}>
+            fontSize={isHovered ? "12" : "11"}
+            fontWeight={isHovered ? "600" : "400"}
+            fontFamily="var(--font-cinzel), serif"
+            style={{ pointerEvents: "none", transition: "fill 0.25s, font-size 0.25s, font-weight 0.25s" }}>
             {sys?.name ?? pin.slug}
           </text>
           {sys?.kankaUrl && (
