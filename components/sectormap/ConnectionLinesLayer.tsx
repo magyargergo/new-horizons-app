@@ -1,5 +1,5 @@
 // Server Component — static connection line paths + labels between systems/vortexes.
-// No "use client" directive. Interactive markers stay in ConnectionLayer (client).
+// No "use client" directive. Interactive markers stay in ConnectionMarkerLayer (client).
 
 import type { ConnectionLine, SystemPin, VortexPin } from "@/types/sector";
 import {
