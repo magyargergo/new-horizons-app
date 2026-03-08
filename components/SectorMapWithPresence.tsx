@@ -11,7 +11,7 @@ interface Props {
   sector: SectorMetadata;
   systemsData: Record<string, StarSystemMetadata>;
   children?: React.ReactNode;
-  staticSvgLayers?: React.ReactNode;
+  staticSvgLayers: React.ReactNode;
 }
 
 export default function SectorMapWithPresence({ sector, systemsData, children, staticSvgLayers }: Props) {

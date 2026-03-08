@@ -10,7 +10,7 @@ import {
   MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, FOCUS_ZOOM, AUTO_SELECT_ZOOM,
   SYS_MAX_R, SYS_SCALE,
 } from "@/lib/sectorMapHelpers";
-import { ConnectionLayer } from "@/components/sectormap/ConnectionLayer";
+import { ConnectionMarkerLayer } from "@/components/sectormap/ConnectionMarkerLayer";
 import { StarSystemView } from "@/components/sectormap/StarSystemView";
 import { SearchOverlay } from "@/components/sectormap/SearchOverlay";
 
@@ -216,12 +216,11 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
           {staticSvgLayers}
 
           {/* ── Connection lines ── */}
-          <ConnectionLayer
+          <ConnectionMarkerLayer
             connections={sector.connections ?? []}
             systems={sector.systems}
             vortexes={sector.vortexes ?? []}
             sectorSlug={sector.slug}
-            sectorColor={sector.color}
             orbitDataMap={orbitDataMap}
             activeMarkerId={activeMarkerId}
             showMarker={showMarker}
