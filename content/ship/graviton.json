@@ -1,0 +1,159 @@
+{
+  "name": "Graviton",
+  "class": "Explorer-class Cruiser",
+  "description": "A sleek, white-and-gold explorer vessel designed for deep-space reconnaissance and diplomatic missions.",
+  "layers": [
+    {
+      "id": "command-deck",
+      "name": "Command Deck",
+      "zIndex": 3,
+      "color": "#818CF8",
+      "bays": [
+        {
+          "id": "bridge",
+          "name": "Bridge",
+          "description": "The nerve center of the Graviton. Holographic displays project real-time stellar cartography while the captain's chair interfaces directly with the ship's AI.",
+          "image": "/ship/bridge.png",
+          "x": 0.75,
+          "y": 0.45,
+          "width": 0.18,
+          "height": 0.1
+        },
+        {
+          "id": "comms-array",
+          "name": "Communications Array",
+          "description": "A quantum-entangled transmitter array capable of faster-than-light messaging across sectors. Houses the encrypted diplomatic channels.",
+          "image": "/ship/comms.png",
+          "x": 0.85,
+          "y": 0.35,
+          "width": 0.1,
+          "height": 0.08
+        },
+        {
+          "id": "observation-lounge",
+          "name": "Observation Lounge",
+          "description": "A panoramic dome atop the command deck offering an unobstructed view of the cosmos. Often used for diplomatic receptions and crew morale events.",
+          "image": "/ship/observation.png",
+          "x": 0.6,
+          "y": 0.42,
+          "width": 0.12,
+          "height": 0.16
+        }
+      ]
+    },
+    {
+      "id": "main-deck",
+      "name": "Main Deck",
+      "zIndex": 2,
+      "color": "#A78BFA",
+      "bays": [
+        {
+          "id": "crew-quarters",
+          "name": "Crew Quarters",
+          "description": "Modular living pods for up to 120 crew members. Each pod features adaptive gravity plating and personal environmental controls.",
+          "image": "/ship/quarters.png",
+          "x": 0.45,
+          "y": 0.35,
+          "width": 0.2,
+          "height": 0.12
+        },
+        {
+          "id": "medbay",
+          "name": "Medical Bay",
+          "description": "State-of-the-art medical facility with regeneration chambers, nano-surgical suites, and a quarantine wing for xenobiological encounters.",
+          "image": "/ship/medbay.png",
+          "x": 0.45,
+          "y": 0.53,
+          "width": 0.15,
+          "height": 0.12
+        },
+        {
+          "id": "armory",
+          "name": "Armory",
+          "description": "Secured weapons storage and tactical preparation area. Contains personal sidearms, energy shields, and EVA combat suits.",
+          "image": "/ship/armory.png",
+          "x": 0.65,
+          "y": 0.35,
+          "width": 0.1,
+          "height": 0.1
+        }
+      ]
+    },
+    {
+      "id": "engineering-deck",
+      "name": "Engineering Deck",
+      "zIndex": 1,
+      "color": "#F59E0B",
+      "bays": [
+        {
+          "id": "reactor-core",
+          "name": "Graviton Reactor Core",
+          "description": "The ship's namesake — a miniature graviton singularity harnessed for near-infinite energy. Shielded by triple-layered containment fields.",
+          "image": "/ship/reactor.png",
+          "x": 0.4,
+          "y": 0.4,
+          "width": 0.15,
+          "height": 0.2
+        },
+        {
+          "id": "ftl-drive",
+          "name": "FTL Drive Chamber",
+          "description": "The Alcubierre-type warp drive that bends spacetime for faster-than-light travel. Requires a 90-second spin-up before jump.",
+          "image": "/ship/ftl.png",
+          "x": 0.2,
+          "y": 0.4,
+          "width": 0.15,
+          "height": 0.2
+        },
+        {
+          "id": "life-support",
+          "name": "Life Support Systems",
+          "description": "Atmospheric processors, water recyclers, and gravity generators. Redundant systems ensure 72 hours of emergency operation.",
+          "image": "/ship/lifesupport.png",
+          "x": 0.58,
+          "y": 0.42,
+          "width": 0.12,
+          "height": 0.16
+        }
+      ]
+    },
+    {
+      "id": "cargo-hold",
+      "name": "Cargo Hold",
+      "zIndex": 0,
+      "color": "#34D399",
+      "bays": [
+        {
+          "id": "main-cargo",
+          "name": "Main Cargo Bay",
+          "description": "A cavernous storage area with magnetic clamps and zero-g loading zones. Can hold up to 500 metric tons of supplies or salvage.",
+          "image": "/ship/cargo.png",
+          "x": 0.3,
+          "y": 0.38,
+          "width": 0.25,
+          "height": 0.24
+        },
+        {
+          "id": "shuttle-bay",
+          "name": "Shuttle Bay",
+          "description": "Houses two Sparrow-class shuttlecraft for planetary landings and short-range reconnaissance. Includes repair gantries and fuel reserves.",
+          "image": "/ship/shuttle.png",
+          "x": 0.15,
+          "y": 0.42,
+          "width": 0.12,
+          "height": 0.16
+        },
+        {
+          "id": "science-lab",
+          "name": "Xenoscience Laboratory",
+          "description": "A sealed research facility for analyzing alien artifacts, biological samples, and anomalous materials collected during missions.",
+          "image": "/ship/scilab.png",
+          "x": 0.6,
+          "y": 0.42,
+          "width": 0.12,
+          "height": 0.16
+        }
+      ]
+    }
+  ]
+}
