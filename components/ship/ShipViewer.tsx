@@ -111,10 +111,17 @@ export default function ShipViewer({ ship }: ShipViewerProps) {
   }, []);
 
   // Derived animation values
-  const rotateX = Math.min(progress * 2, 1) * 60;
-  const splitPhase = Math.max(0, (progress - 0.3) / 0.7);
-  const layerSpread = splitPhase * 160;
   const totalLayers = ship.layers.length;
+
+  // Rotation: 90 (vertical) -> 15 (nose pointing right-bottom)
+  const rotation = 90 - progress * 75;
+  // "Spin inward" — slight perspective tilt via rotateY
+  const tilt = progress * 8;
+  // Size: 25vw (vertical) -> 70vw (horizontal, bigger for readability)
+  const widthVw = 25 + progress * 45;
+  // Layer separation starts after rotation is mostly done
+  const splitPhase = Math.max(0, (progress - 0.5) / 0.5);
+  const layerGap = splitPhase * 110; // px between each layer
 
   return (
     <>
@@ -123,7 +130,6 @@ export default function ShipViewer({ ship }: ShipViewerProps) {
         className="flex items-center justify-center overflow-hidden"
         style={{
           height: "calc(100dvh - 4rem)",
-          perspective: "1400px",
           touchAction: "none",
         }}
       >
@@ -173,7 +179,7 @@ export default function ShipViewer({ ship }: ShipViewerProps) {
         {/* Layer labels */}
         <div
           className="absolute left-6 top-0 bottom-0 flex flex-col justify-center z-10 pointer-events-none"
-          style={{ gap: `${Math.max(24, layerSpread * 0.6)}px` }}
+          style={{ gap: `${Math.max(24, layerGap * 0.8)}px` }}
         >
           {ship.layers.map((layer) => (
             <div
@@ -201,18 +207,19 @@ export default function ShipViewer({ ship }: ShipViewerProps) {
           ))}
         </div>
 
-        {/* 3D Ship */}
+        {/* Ship */}
         <div
-          className="w-full max-w-3xl px-8"
           style={{
-            transformStyle: "preserve-3d",
-            transform: `rotateX(${rotateX}deg)`,
+            width: `${widthVw}vw`,
+            maxWidth: "900px",
+            transform: `rotate(${rotation}deg) perspective(1200px) rotateY(${tilt}deg)`,
           }}
         >
-          <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+          <div className="relative">
             {ship.layers.map((layer, i) => {
-              const offset = (i - (totalLayers - 1) / 2) * layerSpread;
-              const z = (totalLayers - 1 - i) * 4;
+              // Center the spread: offset each layer from the middle
+              const centerIndex = (totalLayers - 1) / 2;
+              const offset = (i - centerIndex) * layerGap;
 
               return (
                 <div
@@ -222,7 +229,7 @@ export default function ShipViewer({ ship }: ShipViewerProps) {
                     top: i === 0 ? undefined : 0,
                     left: i === 0 ? undefined : 0,
                     right: i === 0 ? undefined : 0,
-                    transform: `translateY(${offset}px) translateZ(${z}px)`,
+                    transform: `translateY(${offset}px)`,
                   }}
                 >
                   <ShipSvgLayer
