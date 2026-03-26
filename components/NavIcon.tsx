@@ -13,7 +13,7 @@ export default function NavIcon({ href, label, children }: NavIconProps) {
     <Link
       href={href}
       title={label}
-      className="fixed top-20 right-6 z-40 flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 hover:bg-white/5 transition-all"
+      className="fixed top-20 right-3 sm:right-6 z-40 flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-lg border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 hover:bg-white/5 transition-all"
       style={{ backdropFilter: "blur(8px)", background: "rgba(10,10,30,0.5)" }}
     >
       {children}
