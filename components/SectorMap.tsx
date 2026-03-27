@@ -14,7 +14,7 @@ import { ConnectionMarkerLayer } from "@/components/sectormap/ConnectionMarkerLa
 import { StarSystemView } from "@/components/sectormap/StarSystemView";
 import { SearchOverlay } from "@/components/sectormap/SearchOverlay";
 import { usePlanningMode } from "@/hooks/usePlanningMode";
-import { PlanningLayer } from "@/components/sectormap/PlanningLayer";
+import { PlanningLayer, PlanningTotalBox } from "@/components/sectormap/PlanningLayer";
 import { PlanningToggle } from "@/components/sectormap/PlanningToggle";
 import { PLANNING_COLOR } from "@/lib/planningMode";
 
@@ -323,6 +323,11 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
           )}
         </svg>
       </div>
+
+      {/* ── Planning total box ── */}
+      {planning.active && (
+        <PlanningTotalBox waypoints={planning.waypoints} />
+      )}
 
       {/* ── Controls ── */}
       {activeSystemSlug && (

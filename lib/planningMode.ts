@@ -1,7 +1,7 @@
 // ── Planning Mode constants & helpers ──
 
 /** The accent color used for all planning mode UI. Change this single value to restyle. */
-export const PLANNING_COLOR = "#38bdf8"; // sky-400
+export const PLANNING_COLOR = "#7dd3fc"; // sky-300 — softer, less vibrant
 
 /** Maximum number of waypoints the user can place */
 export const MAX_WAYPOINTS = 5;
@@ -42,13 +42,10 @@ export const MINUTES_PER_UNIT = 6;
  *  e.g. 30u → "3h", 800u → "3d 8h", 5u → "30m" */
 export function formatTravelTime(distance: number, minutesPerUnit = MINUTES_PER_UNIT): string {
   const totalMinutes = Math.round(distance * minutesPerUnit);
-  if (totalMinutes < 60) return `${totalMinutes}m`;
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const mins = totalMinutes % 60;
-  const parts: string[] = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (mins > 0 && days === 0) parts.push(`${mins}m`); // skip minutes when showing days for brevity
-  return parts.join(" ") || "0m";
+  const totalHours = Math.ceil(totalMinutes / 60); // always round up to next full hour
+  if (totalHours < 24) return `${totalHours}h`;
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  if (hours === 0) return `${days}d`;
+  return `${days}d ${hours}h`;
 }
