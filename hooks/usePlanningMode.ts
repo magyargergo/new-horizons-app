@@ -8,6 +8,9 @@ interface UsePlanningModeOptions {
   zoom: number;
 }
 
+/** Time window (ms) after a touch event during which synthetic mouse events are ignored */
+const TOUCH_MOUSE_GUARD = 500;
+
 export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
   const [active, setActive] = useState(false);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
@@ -32,6 +35,10 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const didDragRef = useRef(false);
 
+  // Touch state — pending placement deferred to touchEnd, and guard against synthetic mouse events
+  const pendingPlaceRef = useRef<{ x: number; y: number } | null>(null);
+  const lastTouchTimeRef = useRef(0);
+
   const toggle = useCallback(() => {
     setActive(prev => {
       if (prev) setWaypoints([]); // clear on deactivate
@@ -53,28 +60,28 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
     [zoom]
   );
 
-  // ── Mouse handlers ──
+  // ── Mouse handlers (blocked after recent touch to prevent synthetic events) ──
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (!active || e.button !== 0) return false;
+      if (Date.now() - lastTouchTimeRef.current < TOUCH_MOUSE_GUARD) return true; // block synthetic
       const svg = clientToSvg(e.clientX, e.clientY);
       if (!svg) return false;
 
-      // Check synchronously before setState
       const wps = waypointsRef.current;
       const idx = hitTest(svg.x, svg.y, wps);
       if (idx >= 0) {
         draggingRef.current = idx;
         dragStartRef.current = { x: e.clientX, y: e.clientY };
         didDragRef.current = false;
-        return true; // consumed — dragging a waypoint
+        return true;
       }
       if (wps.length < MAX_WAYPOINTS) {
         setWaypoints(prev => [...prev, { x: svg.x, y: svg.y }]);
-        return true; // consumed — placed a waypoint
+        return true;
       }
-      return false; // at max capacity, nothing to drag — allow pan
+      return false;
     },
     [active, clientToSvg, hitTest]
   );
@@ -94,74 +101,13 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
         if (next[idx]) next[idx] = { x: svg.x, y: svg.y };
         return next;
       });
-      return true; // consumed
-    },
-    [clientToSvg]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    const idx = draggingRef.current;
-    if (idx === null) return false;
-
-    if (!didDragRef.current) {
-      // Click without drag on existing waypoint → remove it
-      setWaypoints(prev => prev.filter((_, i) => i !== idx));
-    }
-
-    draggingRef.current = null;
-    dragStartRef.current = null;
-    didDragRef.current = false;
-    return true; // consumed
-  }, []);
-
-  // ── Touch handlers ──
-
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      if (!active || e.touches.length !== 1) return false;
-      const t = e.touches[0];
-      const svg = clientToSvg(t.clientX, t.clientY);
-      if (!svg) return false;
-
-      const wps = waypointsRef.current;
-      const idx = hitTest(svg.x, svg.y, wps);
-      if (idx >= 0) {
-        draggingRef.current = idx;
-        dragStartRef.current = { x: t.clientX, y: t.clientY };
-        didDragRef.current = false;
-        return true;
-      }
-      if (wps.length < MAX_WAYPOINTS) {
-        setWaypoints(prev => [...prev, { x: svg.x, y: svg.y }]);
-        return true;
-      }
-      return false;
-    },
-    [active, clientToSvg, hitTest]
-  );
-
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      if (draggingRef.current === null || e.touches.length !== 1) return false;
-      const t = e.touches[0];
-      const dx = t.clientX - (dragStartRef.current?.x ?? 0);
-      const dy = t.clientY - (dragStartRef.current?.y ?? 0);
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDragRef.current = true;
-
-      const svg = clientToSvg(t.clientX, t.clientY);
-      if (!svg) return false;
-      const idx = draggingRef.current;
-      setWaypoints(prev => {
-        const next = [...prev];
-        if (next[idx]) next[idx] = { x: svg.x, y: svg.y };
-        return next;
-      });
       return true;
     },
     [clientToSvg]
   );
 
-  const handleTouchEnd = useCallback(() => {
+  const handleMouseUp = useCallback(() => {
+    if (Date.now() - lastTouchTimeRef.current < TOUCH_MOUSE_GUARD) return true; // block synthetic
     const idx = draggingRef.current;
     if (idx === null) return false;
 
@@ -173,6 +119,118 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
     dragStartRef.current = null;
     didDragRef.current = false;
     return true;
+  }, []);
+
+  // ── Touch handlers — placement deferred to touchEnd for proper tap detection ──
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!active) return false;
+      lastTouchTimeRef.current = Date.now();
+
+      // Second finger arrived → cancel any pending placement (it's a pinch)
+      if (e.touches.length > 1) {
+        pendingPlaceRef.current = null;
+        return false; // let pan/zoom handle the pinch
+      }
+
+      const t = e.touches[0];
+      const svg = clientToSvg(t.clientX, t.clientY);
+      if (!svg) return false;
+
+      const wps = waypointsRef.current;
+      const idx = hitTest(svg.x, svg.y, wps);
+      if (idx >= 0) {
+        // Start dragging existing waypoint
+        draggingRef.current = idx;
+        dragStartRef.current = { x: t.clientX, y: t.clientY };
+        didDragRef.current = false;
+        pendingPlaceRef.current = null;
+        return true;
+      }
+      if (wps.length < MAX_WAYPOINTS) {
+        // Defer placement — record position, place on touchEnd if no drag/pinch
+        pendingPlaceRef.current = { x: svg.x, y: svg.y };
+        dragStartRef.current = { x: t.clientX, y: t.clientY };
+        didDragRef.current = false;
+        return true; // consume to prevent pan starting
+      }
+      return false;
+    },
+    [active, clientToSvg, hitTest]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      lastTouchTimeRef.current = Date.now();
+
+      // If multiple fingers or moved far → cancel pending placement
+      if (e.touches.length !== 1) {
+        pendingPlaceRef.current = null;
+        return false;
+      }
+
+      const t = e.touches[0];
+      const dx = t.clientX - (dragStartRef.current?.x ?? 0);
+      const dy = t.clientY - (dragStartRef.current?.y ?? 0);
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        didDragRef.current = true;
+        pendingPlaceRef.current = null; // moved too far — it's a pan, not a tap
+      }
+
+      // Dragging an existing waypoint
+      if (draggingRef.current !== null) {
+        const svg = clientToSvg(t.clientX, t.clientY);
+        if (!svg) return false;
+        const idx = draggingRef.current;
+        setWaypoints(prev => {
+          const next = [...prev];
+          if (next[idx]) next[idx] = { x: svg.x, y: svg.y };
+          return next;
+        });
+        return true;
+      }
+
+      // If pending place was cancelled, let pan/zoom take over
+      if (!pendingPlaceRef.current) return false;
+
+      return true; // still consuming while we decide tap vs pan
+    },
+    [clientToSvg]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    lastTouchTimeRef.current = Date.now();
+
+    // Finish dragging an existing waypoint
+    const idx = draggingRef.current;
+    if (idx !== null) {
+      if (!didDragRef.current) {
+        // Tap on existing waypoint without drag → remove it
+        setWaypoints(prev => prev.filter((_, i) => i !== idx));
+      }
+      draggingRef.current = null;
+      dragStartRef.current = null;
+      didDragRef.current = false;
+      return true;
+    }
+
+    // Place deferred waypoint (was a clean tap, no pinch/pan)
+    const pending = pendingPlaceRef.current;
+    if (pending && !didDragRef.current) {
+      setWaypoints(prev =>
+        prev.length < MAX_WAYPOINTS ? [...prev, pending] : prev
+      );
+      pendingPlaceRef.current = null;
+      dragStartRef.current = null;
+      didDragRef.current = false;
+      return true;
+    }
+
+    pendingPlaceRef.current = null;
+    dragStartRef.current = null;
+    didDragRef.current = false;
+    return false;
   }, []);
 
   const handlers = useMemo(() => ({
