@@ -153,7 +153,7 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
         pendingPlaceRef.current = { x: svg.x, y: svg.y };
         dragStartRef.current = { x: t.clientX, y: t.clientY };
         didDragRef.current = false;
-        return true; // consume to prevent pan starting
+        return false; // let pan/zoom also track — we decide on touchEnd
       }
       return false;
     },
@@ -191,10 +191,8 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
         return true;
       }
 
-      // If pending place was cancelled, let pan/zoom take over
-      if (!pendingPlaceRef.current) return false;
-
-      return true; // still consuming while we decide tap vs pan
+      // Pending place — don't consume, pan/zoom handles movement
+      return false;
     },
     [clientToSvg]
   );
