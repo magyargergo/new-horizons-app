@@ -13,6 +13,13 @@ import {
 import { ConnectionMarkerLayer } from "@/components/sectormap/ConnectionMarkerLayer";
 import { StarSystemView } from "@/components/sectormap/StarSystemView";
 import { SearchOverlay } from "@/components/sectormap/SearchOverlay";
+import { usePlanningMode } from "@/hooks/usePlanningMode";
+import { PlanningLayer } from "@/components/sectormap/PlanningLayer";
+import { PlanningToggle } from "@/components/sectormap/PlanningToggle";
+import { PLANNING_COLOR } from "@/lib/planningMode";
+
+const noop = () => {};
+const noopStr = (_s: string | null) => {};
 
 interface SectorMapProps {
   sector: SectorMetadata;
@@ -27,6 +34,8 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
     containerRef, svgRef, vb, zoom, cursorGrab, didDragRef,
     zoomIn, zoomOut, resetView: resetPanZoom, animateToVb, isAnimatingRef, handlers,
   } = useSvgPanZoom({ width: FULL_W, height: FULL_H, minZoom: MIN_ZOOM, maxZoom: MAX_ZOOM, zoomStep: ZOOM_STEP });
+
+  const planning = usePlanningMode({ svgRef, zoom });
 
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [activeSystemSlug, setActiveSystemSlug] = useState<string | null>(null);
@@ -54,6 +63,35 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
   const handleSvgMouseMove = useCallback((e: React.MouseEvent) => {
     cursorClientRef.current = { x: e.clientX, y: e.clientY };
   }, []);
+
+  // ── Planning mode event wrappers ──
+  // Planning mode intercepts events first; if consumed, skip pan/zoom & normal interactions.
+  const wrappedHandlers = useMemo(() => ({
+    onMouseDown: (e: React.MouseEvent) => {
+      if (planning.handlers.onMouseDown(e)) return;
+      handlers.onMouseDown(e);
+    },
+    onMouseMove: (e: React.MouseEvent) => {
+      if (planning.handlers.onMouseMove(e)) return;
+      handlers.onMouseMove(e);
+    },
+    onMouseUp: (e: React.MouseEvent) => {
+      if (planning.handlers.onMouseUp()) return;
+      handlers.onMouseUp();
+    },
+    onTouchStart: (e: React.TouchEvent) => {
+      if (planning.handlers.onTouchStart(e)) return;
+      handlers.onTouchStart(e);
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      if (planning.handlers.onTouchMove(e)) return;
+      handlers.onTouchMove(e);
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      if (planning.handlers.onTouchEnd()) return;
+      handlers.onTouchEnd();
+    },
+  }), [planning.handlers, handlers]);
 
   /** Find which system pin the cursor is over (in SVG space), or null. */
   const systemUnderCursor = useCallback(() => {
@@ -158,10 +196,11 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
   }, [vb, activeSystemSlug, sector.systems, hideBody, systemUnderCursor, isAnimatingRef]);
 
   const handleSvgClick = useCallback(() => {
+    if (planning.active) return; // planning mode handles its own clicks
     if (didDragRef.current) return;
     if (activeBodyIdRef.current) hideBody();
     if (activeMarkerIdRef.current) hideMarker();
-  }, [didDragRef, activeBodyIdRef, hideBody, activeMarkerIdRef, hideMarker]);
+  }, [planning.active, didDragRef, activeBodyIdRef, hideBody, activeMarkerIdRef, hideMarker]);
 
   // ── Memoized data ──
 
@@ -194,11 +233,16 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
     <div className="relative w-full h-full">
       <div
         ref={containerRef}
-        className="relative w-full h-full overflow-hidden rounded-lg border border-indigo-500/20"
-        style={{ cursor: cursorGrab ? "grabbing" : "grab", touchAction: "none" }}
-        {...handlers}
+        className="relative w-full h-full overflow-hidden rounded-lg border transition-all duration-300"
+        style={{
+          cursor: planning.active ? "crosshair" : cursorGrab ? "grabbing" : "grab",
+          touchAction: "none",
+          borderColor: planning.active ? PLANNING_COLOR : "rgba(99,102,241,0.2)",
+          boxShadow: planning.active ? `0 0 12px ${PLANNING_COLOR}40, inset 0 0 12px ${PLANNING_COLOR}10` : "none",
+        }}
+        {...wrappedHandlers}
         onMouseLeave={handlers.onMouseUp}
-        onDoubleClick={() => { if (!didDragRef.current) resetView(); }}
+        onDoubleClick={() => { if (!didDragRef.current && !planning.active) resetView(); }}
       >
         {/* ── Layers 1-2: Static nebula + grid (server-rendered children) ── */}
         {children}
@@ -244,16 +288,21 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
                 isActive={isActive}
                 isDimmed={activeSystemSlug !== null && !isActive}
                 noActiveSystem={activeSystemSlug === null}
-                isHovered={hoveredSlug === pin.slug}
+                isHovered={!planning.active && hoveredSlug === pin.slug}
                 orbitData={orbitDataMap.get(pin.slug) ?? { orbitDistances: [], maxOrbit: 40 }}
                 vb={isActive ? vb : undefined}
-                activeBodyId={activeBodySystemSlug === pin.slug ? activeBodyId : null}
+                activeBodyId={!planning.active && activeBodySystemSlug === pin.slug ? activeBodyId : null}
                 tooltipActions={bodyTooltipActions}
-                onFocusSystem={focusSystem}
-                onHoverSystem={setHoveredSlug}
+                onFocusSystem={planning.active ? noop : focusSystem}
+                onHoverSystem={planning.active ? noopStr : setHoveredSlug}
               />
             );
           })}
+
+          {/* ── Planning mode overlay ── */}
+          {planning.active && (
+            <PlanningLayer waypoints={planning.waypoints} vb={vb} />
+          )}
 
           {/* Empty state */}
           {sector.systems.length === 0 && (
@@ -309,6 +358,7 @@ export default function SectorMap({ sector, systemsData = {}, onSystemChange, ch
           className="w-8 h-8 rounded scifi-card flex items-center justify-center text-white/70 hover:text-white text-xs leading-none transition-colors">
           &#x21BB;
         </button>
+        <PlanningToggle active={planning.active} onToggle={planning.toggle} />
       </div>
 
       <div className="absolute bottom-3 left-3 text-[10px] text-slate-500 select-none pointer-events-none">
