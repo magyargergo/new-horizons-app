@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, type RefObject } from "react";
+import { useState, useRef, useCallback, useMemo, type RefObject } from "react";
 import { MAX_WAYPOINTS, WAYPOINT_HIT_R, type Waypoint } from "@/lib/planningMode";
 
 interface UsePlanningModeOptions {
@@ -175,17 +175,19 @@ export function usePlanningMode({ svgRef, zoom }: UsePlanningModeOptions) {
     return true;
   }, []);
 
+  const handlers = useMemo(() => ({
+    onMouseDown: handleMouseDown,
+    onMouseMove: handleMouseMove,
+    onMouseUp: handleMouseUp,
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: handleTouchEnd,
+  }), [handleMouseDown, handleMouseMove, handleMouseUp, handleTouchStart, handleTouchMove, handleTouchEnd]);
+
   return {
     active,
     toggle,
     waypoints,
-    handlers: {
-      onMouseDown: handleMouseDown,
-      onMouseMove: handleMouseMove,
-      onMouseUp: handleMouseUp,
-      onTouchStart: handleTouchStart,
-      onTouchMove: handleTouchMove,
-      onTouchEnd: handleTouchEnd,
-    },
+    handlers,
   };
 }

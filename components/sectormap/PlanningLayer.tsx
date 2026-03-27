@@ -240,30 +240,6 @@ export function PlanningTotalBox({ waypoints }: PlanningTotalBoxProps) {
           minWidth: 160,
         }}
       >
-        {/* Decorative SVG flourishes */}
-        <svg
-          className="absolute inset-0 w-full h-full overflow-visible"
-          style={{ pointerEvents: "none" }}
-        >
-          {/* Bottom-left spiral */}
-          <path
-            d={`M 4 ${100}% C 4 85%, 15 80%, 20 70%`}
-            fill="none" stroke={c} strokeWidth="0.7" strokeOpacity="0.3"
-            strokeLinecap="round"
-          />
-          {/* Bottom-right spiral */}
-          <path
-            d="M calc(100% - 4) 100% C calc(100% - 4) 85%, calc(100% - 15) 80%, calc(100% - 20) 70%"
-            fill="none" stroke={c} strokeWidth="0.7" strokeOpacity="0.3"
-            strokeLinecap="round"
-          />
-          {/* Inner glow line along bottom edge */}
-          <line
-            x1="8" y1="100%" x2="calc(100% - 8)" y2="100%"
-            stroke={c} strokeWidth="0.4" strokeOpacity="0.15"
-          />
-        </svg>
-
         {/* Corner dots */}
         <div
           className="absolute bottom-1.5 left-1.5 rounded-full"
@@ -272,6 +248,11 @@ export function PlanningTotalBox({ waypoints }: PlanningTotalBoxProps) {
         <div
           className="absolute bottom-1.5 right-1.5 rounded-full"
           style={{ width: 3, height: 3, background: c, opacity: 0.4 }}
+        />
+        {/* Bottom edge glow line */}
+        <div
+          className="absolute bottom-0 left-2 right-2 h-px"
+          style={{ background: c, opacity: 0.15 }}
         />
 
         {/* Outer glow border */}

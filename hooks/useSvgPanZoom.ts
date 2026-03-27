@@ -310,7 +310,6 @@ export function useSvgPanZoom({
     resetView,
     animateToVb,
     isAnimatingRef,
-    screenToSvg,
     handlers: {
       onMouseDown: handleMouseDown,
       onMouseMove: handleMouseMove,
