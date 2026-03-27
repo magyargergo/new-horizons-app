@@ -1,4 +1,4 @@
-import { PLANNING_COLOR, WAYPOINT_DRAW_R, segmentDistance, totalDistance, formatTravelTime, type Waypoint } from "@/lib/planningMode";
+import { PLANNING_COLOR, WAYPOINT_DRAW_R, MAX_WAYPOINTS, segmentDistance, totalDistance, formatTravelTime, type Waypoint } from "@/lib/planningMode";
 
 interface PlanningLayerProps {
   waypoints: Waypoint[];
@@ -10,22 +10,18 @@ interface PlanningTotalBoxProps {
   waypoints: Waypoint[];
 }
 
-/** Generate a spiral arm path starting from (cx,cy) curving outward.
- *  `startAngle` in radians, `sweep` controls how far the arm wraps. */
-function spiralArm(cx: number, cy: number, r: number, startAngle: number, sweep: number, scale: number): string {
-  const r1 = r * 1.6;
-  const r2 = r * 2.8;
-  const a1 = startAngle + sweep * 0.5;
-  const a2 = startAngle + sweep;
-  const x0 = cx + r * Math.cos(startAngle) * scale;
-  const y0 = cy + r * Math.sin(startAngle) * scale;
-  const cpx = cx + r1 * Math.cos(a1) * scale;
-  const cpy = cy + r1 * Math.sin(a1) * scale;
-  const ex = cx + r2 * Math.cos(a2) * scale;
-  const ey = cy + r2 * Math.sin(a2) * scale;
-  return `M ${x0} ${y0} Q ${cpx} ${cpy} ${ex} ${ey}`;
-}
-
+/** Precomputed curve params per waypoint index — 16 long random curves each */
+const WAYPOINT_CURVES: { a1: number; a2: number; cpA: number; cpR: number; op: number }[][] = Array.from({ length: MAX_WAYPOINTS }, (_, i) => {
+  let h = (0xdeadbeef + i * 2654435761) >>> 0;
+  const next = () => { h = (Math.imul(h, 1664525) + 1013904223) >>> 0; return (h >>> 8) / 0xffffff; };
+  return Array.from({ length: 16 }, () => ({
+    a1: next() * Math.PI * 2,
+    a2: next() * Math.PI * 2,
+    cpA: next() * Math.PI * 2,
+    cpR: 0.2 + next() * 0.6,
+    op: 0.15 + next() * 0.25,
+  }));
+});
 
 export function PlanningLayer({ waypoints, vb }: PlanningLayerProps) {
   if (waypoints.length === 0) return null;
@@ -33,9 +29,7 @@ export function PlanningLayer({ waypoints, vb }: PlanningLayerProps) {
   // Scale factor so text/circles stay a consistent screen size regardless of zoom
   const scale = vb.w / 1200;
   const r = WAYPOINT_DRAW_R * scale;
-  const fontSize = 12 * scale;
   const segFontSize = 11 * scale;
-  const labelOffset = r + 8 * scale;
 
   return (
     <g style={{ pointerEvents: "none" }}>
@@ -80,7 +74,11 @@ export function PlanningLayer({ waypoints, vb }: PlanningLayerProps) {
         const len = Math.sqrt(dx * dx + dy * dy);
         const nx = len > 0 ? -dy / len : 0;
         const ny = len > 0 ? dx / len : -1;
-        const off = 10 * scale;
+        const off = 18 * scale;
+        // Angle of the line in degrees, flipped if upside-down so text stays readable
+        let angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+        if (angleDeg > 90) angleDeg -= 180;
+        else if (angleDeg < -90) angleDeg += 180;
         return (
           <text
             key={`dist-${i}`}
@@ -93,115 +91,98 @@ export function PlanningLayer({ waypoints, vb }: PlanningLayerProps) {
             fontFamily="var(--font-geist-sans), sans-serif"
             fontWeight={600}
             opacity={0.85}
+            transform={`rotate(${angleDeg} ${mx + nx * off} ${my + ny * off})`}
           >
             {formatTravelTime(dist)}
           </text>
         );
       })}
 
-      {/* Waypoint markers — galaxy-core style with spiral arms */}
+      {/* Waypoint markers */}
       {waypoints.map((wp, i) => {
-        // Direction angle: point spiral arms along route direction
-        const next = waypoints[i + 1];
-        const prev = waypoints[i - 1];
-        let angle = 0;
-        if (next) angle = Math.atan2(next.y - wp.y, next.x - wp.x);
-        else if (prev) angle = Math.atan2(wp.y - prev.y, wp.x - prev.x);
+        const outerR = r * 2.2;
 
         return (
           <g key={`wp-${i}`}>
-            {/* Outer halo */}
+            {/* Thin outer border circle */}
             <circle
-              cx={wp.x} cy={wp.y} r={r * 2.2}
+              cx={wp.x} cy={wp.y} r={outerR}
               fill="none"
               stroke={PLANNING_COLOR}
               strokeWidth={0.5 * scale}
-              opacity={0.2}
+              strokeOpacity={0.5}
             />
-            {/* Mid halo */}
+
+            {/* Decorative curves — four arcs spaced around the border */}
+            {[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((a, j) => {
+              const arcR = outerR + 3 * scale;
+              const span = 0.5;
+              const x1 = wp.x + arcR * Math.cos(a - span);
+              const y1 = wp.y + arcR * Math.sin(a - span);
+              const x2 = wp.x + arcR * Math.cos(a + span);
+              const y2 = wp.y + arcR * Math.sin(a + span);
+              const cpR = arcR + 4 * scale;
+              const cpx = wp.x + cpR * Math.cos(a);
+              const cpy = wp.y + cpR * Math.sin(a);
+              return (
+                <path
+                  key={j}
+                  d={`M ${x1} ${y1} Q ${cpx} ${cpy} ${x2} ${y2}`}
+                  fill="none"
+                  stroke={PLANNING_COLOR}
+                  strokeWidth={0.6 * scale}
+                  strokeOpacity={0.35}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+
+            {/* Long random curves connecting core to outer ring */}
+            {WAYPOINT_CURVES[i].map((c, j) => {
+              const x1 = wp.x + r * Math.cos(c.a1);
+              const y1 = wp.y + r * Math.sin(c.a1);
+              const x2 = wp.x + outerR * Math.cos(c.a2);
+              const y2 = wp.y + outerR * Math.sin(c.a2);
+              const cpx = wp.x + (r + (outerR - r) * c.cpR) * Math.cos(c.cpA);
+              const cpy = wp.y + (r + (outerR - r) * c.cpR) * Math.sin(c.cpA);
+              return (
+                <path
+                  key={j}
+                  d={`M ${x1} ${y1} Q ${cpx} ${cpy} ${x2} ${y2}`}
+                  fill="none"
+                  stroke={PLANNING_COLOR}
+                  strokeWidth={0.5 * scale}
+                  strokeOpacity={c.op}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+
+            {/* Radial gradient for soft-edged core */}
+            <defs>
+              <radialGradient id={`wp-glow-${i}`}>
+                <stop offset="0%" stopColor={PLANNING_COLOR} stopOpacity={0.95} />
+                <stop offset="55%" stopColor={PLANNING_COLOR} stopOpacity={0.85} />
+                <stop offset="100%" stopColor={PLANNING_COLOR} stopOpacity={0} />
+              </radialGradient>
+            </defs>
+            {/* Soft-edged glowing core */}
             <circle
-              cx={wp.x} cy={wp.y} r={r * 1.6}
-              fill="none"
-              stroke={PLANNING_COLOR}
-              strokeWidth={0.6 * scale}
-              opacity={0.3}
-            />
-            {/* Glow fill */}
-            <circle
-              cx={wp.x} cy={wp.y} r={r * 1.2}
-              fill={PLANNING_COLOR}
-              fillOpacity={0.08}
-              stroke="none"
-            />
-            {/* Core ring */}
-            <circle
-              cx={wp.x} cy={wp.y} r={r}
-              fill={PLANNING_COLOR}
-              fillOpacity={0.15}
-              stroke={PLANNING_COLOR}
-              strokeWidth={0.7 * scale}
-              strokeOpacity={0.6}
-            />
-            {/* Bright core */}
-            <circle
-              cx={wp.x} cy={wp.y} r={r * 0.45}
-              fill={PLANNING_COLOR}
-              fillOpacity={0.5}
-              stroke="none"
-            />
-            {/* Inner core dot */}
-            <circle
-              cx={wp.x} cy={wp.y} r={r * 0.2}
-              fill={PLANNING_COLOR}
-              fillOpacity={0.8}
+              cx={wp.x} cy={wp.y} r={r * 1.3}
+              fill={`url(#wp-glow-${i})`}
               stroke="none"
             />
 
-            {/* Spiral arms — two opposing slingshot curves */}
-            <path
-              d={spiralArm(wp.x, wp.y, r, angle - 0.3, 2.2, 1)}
-              fill="none"
-              stroke={PLANNING_COLOR}
-              strokeWidth={0.8 * scale}
-              strokeOpacity={0.45}
-              strokeLinecap="round"
-            />
-            <path
-              d={spiralArm(wp.x, wp.y, r, angle - 0.3, 2.2, 1)}
-              fill="none"
-              stroke={PLANNING_COLOR}
-              strokeWidth={3 * scale}
-              strokeOpacity={0.06}
-              strokeLinecap="round"
-            />
-            <path
-              d={spiralArm(wp.x, wp.y, r, angle + Math.PI - 0.3, 2.2, 1)}
-              fill="none"
-              stroke={PLANNING_COLOR}
-              strokeWidth={0.8 * scale}
-              strokeOpacity={0.45}
-              strokeLinecap="round"
-            />
-            <path
-              d={spiralArm(wp.x, wp.y, r, angle + Math.PI - 0.3, 2.2, 1)}
-              fill="none"
-              stroke={PLANNING_COLOR}
-              strokeWidth={3 * scale}
-              strokeOpacity={0.06}
-              strokeLinecap="round"
-            />
-
-            {/* Number label */}
+            {/* Number label — black for contrast on bright core */}
             <text
               x={wp.x}
-              y={wp.y - labelOffset}
+              y={wp.y}
               textAnchor="middle"
-              dominantBaseline="auto"
-              fill={PLANNING_COLOR}
-              fontSize={fontSize}
+              dominantBaseline="central"
+              fill="#0c0c14"
+              fontSize={r * 1.3}
               fontFamily="var(--font-cinzel), serif"
               fontWeight={700}
-              opacity={0.9}
             >
               {i + 1}
             </text>
